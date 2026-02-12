@@ -10,7 +10,7 @@ import { useToast } from '@/hooks/use-toast';
 import { motion } from 'framer-motion';
 
 export default function Withdraw() {
-  const { user, profile } = useAuth();
+  const { user, profile, refreshProfile } = useAuth();
   const { toast } = useToast();
   const [crypto, setCrypto] = useState('BTC');
   const [amount, setAmount] = useState('');
@@ -18,9 +18,38 @@ export default function Withdraw() {
   const [loading, setLoading] = useState(false);
   const [withdrawals, setWithdrawals] = useState<any[]>([]);
 
+  const fetchWithdrawals = async () => {
+    if (!user) return;
+    const { data } = await supabase.from('withdrawals').select('*').eq('user_id', user.id).order('created_at', { ascending: false });
+    setWithdrawals(data || []);
+  };
+
+  useEffect(() => {
+    fetchWithdrawals();
+  }, [user]);
+
+  // Realtime subscription for withdrawal status updates
   useEffect(() => {
     if (!user) return;
-    supabase.from('withdrawals').select('*').eq('user_id', user.id).order('created_at', { ascending: false }).then(({ data }) => setWithdrawals(data || []));
+    const channel = supabase
+      .channel('user-withdrawals')
+      .on(
+        'postgres_changes',
+        { event: 'UPDATE', schema: 'public', table: 'withdrawals', filter: `user_id=eq.${user.id}` },
+        (payload) => {
+          const updated = payload.new as any;
+          setWithdrawals(prev => prev.map(w => w.id === updated.id ? updated : w));
+          if (updated.status === 'approved') {
+            refreshProfile();
+            toast({ title: 'Withdrawal approved!', description: `Your ${updated.crypto_type} withdrawal of $${Number(updated.amount).toFixed(2)} has been approved.` });
+          } else if (updated.status === 'rejected') {
+            toast({ title: 'Withdrawal rejected', description: `Your ${updated.crypto_type} withdrawal was rejected.`, variant: 'destructive' });
+          }
+        }
+      )
+      .subscribe();
+
+    return () => { supabase.removeChannel(channel); };
   }, [user]);
 
   const handleWithdraw = async (e: React.FormEvent) => {
@@ -50,8 +79,7 @@ export default function Withdraw() {
       toast({ title: 'Withdrawal submitted', description: 'Awaiting admin approval.' });
       setAmount('');
       setWalletAddress('');
-      const { data } = await supabase.from('withdrawals').select('*').eq('user_id', user.id).order('created_at', { ascending: false });
-      setWithdrawals(data || []);
+      fetchWithdrawals();
     } catch (err: any) {
       toast({ title: 'Error', description: err.message, variant: 'destructive' });
     } finally {

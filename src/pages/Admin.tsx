@@ -156,6 +156,13 @@ export default function Admin() {
         await supabase.from('profiles').update({ wallet_balance: Math.max(0, Number(user.wallet_balance) - amount) }).eq('id', userId);
       }
     }
+    // Also update the corresponding transaction status
+    const txStatus = action === 'approved' ? 'completed' : 'rejected';
+    await supabase.from('transactions').update({ status: txStatus })
+      .eq('user_id', userId)
+      .eq('type', 'withdrawal')
+      .eq('amount', amount)
+      .eq('status', 'pending');
     toast({ title: `Withdrawal ${action}` });
     fetchAll();
   };
