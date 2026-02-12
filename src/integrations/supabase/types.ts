@@ -14,6 +14,27 @@ export type Database = {
   }
   public: {
     Tables: {
+      admin_wallets: {
+        Row: {
+          crypto_type: string
+          id: string
+          updated_at: string
+          wallet_address: string
+        }
+        Insert: {
+          crypto_type: string
+          id?: string
+          updated_at?: string
+          wallet_address?: string
+        }
+        Update: {
+          crypto_type?: string
+          id?: string
+          updated_at?: string
+          wallet_address?: string
+        }
+        Relationships: []
+      }
       deposits: {
         Row: {
           amount: number

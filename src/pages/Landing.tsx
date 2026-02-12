@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { TrendingUp, Shield, Zap, ArrowRight } from 'lucide-react';
+import { TrendingUp, Shield, Zap, ArrowRight, BarChart3, Globe } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import heroBg from '@/assets/hero-bg.jpg';
 
@@ -40,20 +40,18 @@ export default function Landing() {
             transition={{ duration: 0.7 }}
           >
             <div className="inline-block px-4 py-1.5 rounded-full border border-primary/30 bg-primary/5 text-primary text-sm font-medium mb-6">
-              Next-Gen Trading Simulation
+              Professional Trading Platform
             </div>
             <h1 className="text-5xl md:text-7xl font-bold leading-tight mb-6">
-              <span className="text-foreground">Invest in </span>
-              <span className="text-gradient-primary">Strategy</span>
-              <span className="text-foreground">.</span>
+              <span className="text-foreground">Trade Smarter. </span>
               <br />
-              <span className="text-foreground">Secure Your </span>
-              <span className="text-gradient-gold">Future</span>
+              <span className="text-gradient-primary">Grow</span>
+              <span className="text-foreground"> Your </span>
+              <span className="text-gradient-gold">Wealth</span>
               <span className="text-foreground">.</span>
             </h1>
             <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto mb-8">
-              Master the art of trading with our professional simulation platform. 
-              Practice strategies, build portfolios, and gain confidence — risk-free.
+              Access global markets, build diversified portfolios, and take control of your financial future with our professional-grade trading platform.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Link to="/register">
@@ -81,20 +79,23 @@ export default function Landing() {
             className="text-center mb-16"
           >
             <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">Why TradeSphere?</h2>
-            <p className="text-muted-foreground max-w-xl mx-auto">Everything you need to learn, practice, and master stock trading.</p>
+            <p className="text-muted-foreground max-w-xl mx-auto">Everything you need to invest, trade, and grow your portfolio.</p>
           </motion.div>
           <div className="grid md:grid-cols-3 gap-8">
             {[
-              { icon: TrendingUp, title: 'Real-Time Simulation', desc: 'Trade with simulated market data that updates every 10 seconds. Experience realistic market conditions.' },
-              { icon: Shield, title: 'Risk-Free Practice', desc: 'Build and test your strategies without risking real money. Learn from your mistakes safely.' },
-              { icon: Zap, title: 'Instant Execution', desc: 'Buy and sell stocks instantly. Manage your portfolio with professional-grade tools.' },
+              { icon: TrendingUp, title: 'Live Market Data', desc: 'Access real-time stock prices and market trends. Make informed decisions with up-to-the-second data.' },
+              { icon: Shield, title: 'Secure & Reliable', desc: 'Your funds and data are protected with industry-leading security. Trade with confidence every day.' },
+              { icon: Zap, title: 'Instant Execution', desc: 'Buy and sell stocks instantly. Manage your portfolio with professional-grade tools and analytics.' },
+              { icon: BarChart3, title: 'Advanced Analytics', desc: 'Track your performance with detailed charts, P/L reports, and portfolio breakdowns.' },
+              { icon: Globe, title: 'Global Access', desc: 'Trade from anywhere in the world. Deposit and withdraw using multiple cryptocurrencies.' },
+              { icon: Shield, title: '24/7 Support', desc: 'Our dedicated support team is available around the clock to help you with any questions.' },
             ].map((feature, i) => (
               <motion.div
                 key={feature.title}
                 initial={{ opacity: 0, y: 20 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
-                transition={{ delay: i * 0.15 }}
+                transition={{ delay: i * 0.1 }}
                 className="bg-gradient-card rounded-xl border border-border p-8 hover:border-primary/30 transition-all group"
               >
                 <div className="p-3 rounded-lg bg-primary/10 w-fit mb-4 group-hover:glow-primary transition-all">
@@ -108,11 +109,26 @@ export default function Landing() {
         </div>
       </section>
 
+      {/* CTA */}
+      <section className="py-20 px-6">
+        <div className="max-w-3xl mx-auto text-center">
+          <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}>
+            <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">Ready to Start Investing?</h2>
+            <p className="text-muted-foreground mb-8">Join thousands of traders who trust TradeSphere for their investments.</p>
+            <Link to="/register">
+              <Button size="lg" className="bg-gradient-primary text-primary-foreground hover:opacity-90 px-10 glow-primary">
+                Create Free Account <ArrowRight className="ml-2 h-4 w-4" />
+              </Button>
+            </Link>
+          </motion.div>
+        </div>
+      </section>
+
       {/* Footer */}
       <footer className="border-t border-border py-8 px-6">
         <div className="max-w-6xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
           <span className="text-sm text-muted-foreground">© 2026 TradeSphere. All rights reserved.</span>
-          <span className="text-sm text-muted-foreground">Trading simulation platform — not real financial advice.</span>
+          <span className="text-sm text-muted-foreground">Professional trading platform.</span>
         </div>
       </footer>
     </div>

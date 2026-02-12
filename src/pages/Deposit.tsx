@@ -10,18 +10,12 @@ import { useToast } from '@/hooks/use-toast';
 import { motion } from 'framer-motion';
 import { Copy, Check } from 'lucide-react';
 
-const WALLET_ADDRESSES: Record<string, string> = {
-  BTC: 'bc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlh',
-  ETH: '0x71C7656EC7ab88b098defB751B7401B5f6d8976F',
-  USDT: 'TN2x5hJkgLxXPjQo6nS8ThvwAGj2zYnH1p',
-  DOGE: 'DH5yaieqoZN36fDVciNyRueRGvGLR3mr7L',
-  XRP: 'rEb8TK3gBgk5auZkwc6sHnwrGVJH8DuaLh',
-};
-
 export default function Deposit() {
   const { user } = useAuth();
   const { toast } = useToast();
-  const [crypto, setCrypto] = useState('BTC');
+  const [wallets, setWallets] = useState<Record<string, string>>({});
+  const [cryptoOptions, setCryptoOptions] = useState<string[]>([]);
+  const [crypto, setCrypto] = useState('');
   const [amount, setAmount] = useState('');
   const [txHash, setTxHash] = useState('');
   const [loading, setLoading] = useState(false);
@@ -29,19 +23,39 @@ export default function Deposit() {
   const [deposits, setDeposits] = useState<any[]>([]);
 
   useEffect(() => {
+    // Fetch admin-configured wallets
+    supabase.from('admin_wallets').select('crypto_type, wallet_address').then(({ data }) => {
+      if (data) {
+        const map: Record<string, string> = {};
+        const available: string[] = [];
+        data.forEach(w => {
+          if (w.wallet_address) {
+            map[w.crypto_type] = w.wallet_address;
+            available.push(w.crypto_type);
+          }
+        });
+        setWallets(map);
+        setCryptoOptions(available);
+        if (available.length > 0 && !crypto) setCrypto(available[0]);
+      }
+    });
+  }, []);
+
+  useEffect(() => {
     if (!user) return;
     supabase.from('deposits').select('*').eq('user_id', user.id).order('created_at', { ascending: false }).then(({ data }) => setDeposits(data || []));
   }, [user]);
 
   const copyAddress = () => {
-    navigator.clipboard.writeText(WALLET_ADDRESSES[crypto]);
+    if (!wallets[crypto]) return;
+    navigator.clipboard.writeText(wallets[crypto]);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
 
   const handleDeposit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!user || !amount || !txHash) return;
+    if (!user || !amount || !txHash || !wallets[crypto]) return;
     setLoading(true);
     try {
       const { error } = await supabase.from('deposits').insert({
@@ -60,7 +74,7 @@ export default function Deposit() {
         status: 'pending',
       });
 
-      toast({ title: 'Deposit submitted', description: 'Awaiting admin approval.' });
+      toast({ title: 'Deposit submitted', description: 'Awaiting approval.' });
       setAmount('');
       setTxHash('');
       const { data } = await supabase.from('deposits').select('*').eq('user_id', user.id).order('created_at', { ascending: false });
@@ -81,41 +95,48 @@ export default function Deposit() {
 
       <div className="grid lg:grid-cols-2 gap-6">
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="bg-card border border-border rounded-xl p-6">
-          <form onSubmit={handleDeposit} className="space-y-4">
-            <div>
-              <Label>Cryptocurrency</Label>
-              <Select value={crypto} onValueChange={setCrypto}>
-                <SelectTrigger className="mt-1 bg-secondary border-border"><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  {Object.keys(WALLET_ADDRESSES).map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
-                </SelectContent>
-              </Select>
+          {cryptoOptions.length === 0 ? (
+            <div className="text-center py-8">
+              <p className="text-muted-foreground">No deposit wallets are currently available.</p>
+              <p className="text-muted-foreground text-sm mt-1">Please contact support.</p>
             </div>
-
-            <div>
-              <Label>Platform Wallet Address</Label>
-              <div className="flex mt-1 gap-2">
-                <Input value={WALLET_ADDRESSES[crypto]} readOnly className="bg-secondary border-border font-mono text-xs" />
-                <Button type="button" variant="outline" size="icon" onClick={copyAddress} className="border-border shrink-0">
-                  {copied ? <Check className="h-4 w-4 text-accent" /> : <Copy className="h-4 w-4" />}
-                </Button>
+          ) : (
+            <form onSubmit={handleDeposit} className="space-y-4">
+              <div>
+                <Label>Cryptocurrency</Label>
+                <Select value={crypto} onValueChange={setCrypto}>
+                  <SelectTrigger className="mt-1 bg-secondary border-border"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {cryptoOptions.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+                  </SelectContent>
+                </Select>
               </div>
-            </div>
 
-            <div>
-              <Label>Amount (USD)</Label>
-              <Input type="number" min="1" value={amount} onChange={e => setAmount(e.target.value)} required className="mt-1 bg-secondary border-border font-mono" placeholder="100.00" />
-            </div>
+              <div>
+                <Label>Wallet Address</Label>
+                <div className="flex mt-1 gap-2">
+                  <Input value={wallets[crypto] || ''} readOnly className="bg-secondary border-border font-mono text-xs" />
+                  <Button type="button" variant="outline" size="icon" onClick={copyAddress} className="border-border shrink-0">
+                    {copied ? <Check className="h-4 w-4 text-accent" /> : <Copy className="h-4 w-4" />}
+                  </Button>
+                </div>
+              </div>
 
-            <div>
-              <Label>Transaction Hash</Label>
-              <Input value={txHash} onChange={e => setTxHash(e.target.value)} required className="mt-1 bg-secondary border-border font-mono" placeholder="0x..." />
-            </div>
+              <div>
+                <Label>Amount (USD)</Label>
+                <Input type="number" min="1" value={amount} onChange={e => setAmount(e.target.value)} required className="mt-1 bg-secondary border-border font-mono" placeholder="100.00" />
+              </div>
 
-            <Button type="submit" disabled={loading} className="w-full bg-gradient-primary text-primary-foreground hover:opacity-90">
-              {loading ? 'Submitting...' : 'Submit Deposit'}
-            </Button>
-          </form>
+              <div>
+                <Label>Transaction Hash</Label>
+                <Input value={txHash} onChange={e => setTxHash(e.target.value)} required className="mt-1 bg-secondary border-border font-mono" placeholder="0x..." />
+              </div>
+
+              <Button type="submit" disabled={loading} className="w-full bg-gradient-primary text-primary-foreground hover:opacity-90">
+                {loading ? 'Submitting...' : 'Submit Deposit'}
+              </Button>
+            </form>
+          )}
         </motion.div>
 
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
