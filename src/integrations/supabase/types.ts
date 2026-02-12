@@ -127,6 +127,7 @@ export type Database = {
           email: string
           full_name: string
           id: string
+          user_code: string
           wallet_balance: number
         }
         Insert: {
@@ -134,6 +135,7 @@ export type Database = {
           email?: string
           full_name?: string
           id: string
+          user_code?: string
           wallet_balance?: number
         }
         Update: {
@@ -141,6 +143,7 @@ export type Database = {
           email?: string
           full_name?: string
           id?: string
+          user_code?: string
           wallet_balance?: number
         }
         Relationships: []
