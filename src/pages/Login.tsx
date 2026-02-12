@@ -11,7 +11,7 @@ export default function Login() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
-  const { signIn } = useAuth();
+  const { signIn, isAdmin } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -20,7 +20,16 @@ export default function Login() {
     setLoading(true);
     try {
       await signIn(email, password);
-      navigate('/dashboard');
+      // Check admin role after sign in to redirect appropriately
+      const { supabase } = await import('@/integrations/supabase/client');
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        const { data: roles } = await supabase.from('user_roles').select('role').eq('user_id', user.id);
+        const isAdminUser = roles?.some(r => r.role === 'admin') ?? false;
+        navigate(isAdminUser ? '/admin' : '/dashboard');
+      } else {
+        navigate('/dashboard');
+      }
     } catch (err: any) {
       toast({ title: 'Login failed', description: err.message, variant: 'destructive' });
     } finally {
