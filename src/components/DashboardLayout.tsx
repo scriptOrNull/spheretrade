@@ -11,6 +11,7 @@ import {
   Menu,
   X,
   UserCircle,
+  MessageCircle,
 } from 'lucide-react';
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
@@ -21,6 +22,7 @@ const navItems = [
   { path: '/portfolio', label: 'Portfolio', icon: Briefcase },
   { path: '/deposit', label: 'Deposit', icon: ArrowDownToLine },
   { path: '/withdraw', label: 'Withdraw', icon: ArrowUpFromLine },
+  { path: '/support', label: 'Support', icon: MessageCircle },
   { path: '/profile', label: 'Profile', icon: UserCircle },
 ];
 

@@ -8,7 +8,7 @@ import { useToast } from '@/hooks/use-toast';
 import StatsCard from '@/components/StatsCard';
 import {
   Users, ArrowDownToLine, ArrowUpFromLine, TrendingUp, Wallet,
-  Search, Trash2, AlertTriangle, BarChart3, Clock, Send,
+  Search, Trash2, AlertTriangle, BarChart3, Clock, Send, MessageCircle,
 } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Label } from '@/components/ui/label';
@@ -23,6 +23,7 @@ import {
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
+import AdminSupportChat from '@/components/AdminSupportChat';
 
 export default function Admin() {
   const { isAdmin, profile } = useAuth();
@@ -271,8 +272,9 @@ export default function Admin() {
           <TabsTrigger value="wallets" className="text-xs sm:text-sm">Wallets</TabsTrigger>
           <TabsTrigger value="transactions" className="text-xs sm:text-sm">Transactions</TabsTrigger>
           <TabsTrigger value="transfer" className="text-xs sm:text-sm">Transfer</TabsTrigger>
-          <TabsTrigger value="deletions" className="text-xs sm:text-sm">Deletions ({pendingDeletions})</TabsTrigger>
-        </TabsList>
+           <TabsTrigger value="deletions" className="text-xs sm:text-sm">Deletions ({pendingDeletions})</TabsTrigger>
+          <TabsTrigger value="support" className="text-xs sm:text-sm"><MessageCircle className="h-3.5 w-3.5 mr-1" />Support</TabsTrigger>
+         </TabsList>
 
         {/* Analytics Tab */}
         <TabsContent value="analytics">
@@ -700,6 +702,11 @@ export default function Admin() {
               </table>
             </div>
           </div>
+        </TabsContent>
+
+        {/* Support Chat Tab */}
+        <TabsContent value="support">
+          <AdminSupportChat users={users} />
         </TabsContent>
       </Tabs>
     </AdminLayout>
