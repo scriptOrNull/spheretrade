@@ -1,5 +1,5 @@
 import { useEffect, useState, useMemo } from 'react';
-import DashboardLayout from '@/components/DashboardLayout';
+import AdminLayout from '@/components/AdminLayout';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/lib/auth';
 import { Button } from '@/components/ui/button';
@@ -134,7 +134,7 @@ export default function Admin() {
     'hsl(0, 72%, 51%)', 'hsl(45, 93%, 58%)', 'hsl(280, 60%, 50%)',
   ];
 
-  if (!isAdmin) return <DashboardLayout><p className="text-destructive">Access denied</p></DashboardLayout>;
+  if (!isAdmin) return <AdminLayout><p className="text-destructive">Access denied</p></AdminLayout>;
 
   const handleDepositAction = async (id: string, userId: string, amount: number, action: 'approved' | 'rejected') => {
     await supabase.from('deposits').update({ status: action }).eq('id', id);
@@ -240,7 +240,7 @@ export default function Admin() {
 
 
   return (
-    <DashboardLayout>
+    <AdminLayout>
       <div className="mb-6">
         <h1 className="text-2xl font-bold text-foreground">Admin Dashboard</h1>
         <p className="text-muted-foreground text-sm">Manage users, deposits, withdrawals, and wallets</p>
@@ -689,6 +689,6 @@ export default function Admin() {
           </div>
         </TabsContent>
       </Tabs>
-    </DashboardLayout>
+    </AdminLayout>
   );
 }
