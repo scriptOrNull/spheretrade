@@ -14,6 +14,30 @@ export type Database = {
   }
   public: {
     Tables: {
+      account_deletions: {
+        Row: {
+          delete_after: string
+          id: string
+          requested_at: string
+          status: string
+          user_id: string
+        }
+        Insert: {
+          delete_after?: string
+          id?: string
+          requested_at?: string
+          status?: string
+          user_id: string
+        }
+        Update: {
+          delete_after?: string
+          id?: string
+          requested_at?: string
+          status?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       admin_wallets: {
         Row: {
           crypto_type: string
