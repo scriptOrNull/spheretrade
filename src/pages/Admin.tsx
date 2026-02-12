@@ -592,16 +592,22 @@ export default function Admin() {
               <Send className="h-5 w-5 text-primary" />
               <h3 className="text-lg font-semibold text-foreground">Send Balance to User</h3>
             </div>
-            <p className="text-muted-foreground text-sm mb-6">Transfer funds to any user by their User ID (UUID). The recipient will see a "transfer" transaction in their history.</p>
+            <p className="text-muted-foreground text-sm mb-6">Transfer funds to any user. Select a recipient and enter the amount.</p>
             <div className="space-y-4">
               <div>
-                <Label className="text-xs text-muted-foreground mb-1.5 block">User ID (UUID)</Label>
-                <Input
-                  value={transferCode}
-                  onChange={e => setTransferCode(e.target.value)}
-                  placeholder="e.g. 955b9b57-3503-4209-94c0-44b08cc5e775"
-                  className="bg-secondary border-border font-mono text-xs h-10"
-                />
+                <Label className="text-xs text-muted-foreground mb-1.5 block">Select User</Label>
+                <Select value={transferCode} onValueChange={setTransferCode}>
+                  <SelectTrigger className="bg-secondary border-border text-sm h-10">
+                    <SelectValue placeholder="Choose a user..." />
+                  </SelectTrigger>
+                  <SelectContent className="bg-card border-border z-50">
+                    {users.map(u => (
+                      <SelectItem key={u.id} value={u.id}>
+                        {u.full_name || 'No name'} — {u.email} (${Number(u.wallet_balance).toLocaleString()})
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
               <div>
                 <Label className="text-xs text-muted-foreground mb-1.5 block">Amount ($)</Label>
