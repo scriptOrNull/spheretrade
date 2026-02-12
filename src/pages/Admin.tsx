@@ -25,7 +25,7 @@ import {
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 
 export default function Admin() {
-  const { isAdmin } = useAuth();
+  const { isAdmin, profile } = useAuth();
   const { toast } = useToast();
   const [users, setUsers] = useState<any[]>([]);
   const [deposits, setDeposits] = useState<any[]>([]);
@@ -246,12 +246,13 @@ export default function Admin() {
         <p className="text-muted-foreground text-sm">Manage users, deposits, withdrawals, and wallets</p>
       </div>
 
-      <div className="grid grid-cols-2 lg:grid-cols-5 gap-3 sm:gap-4 mb-8">
-        <StatsCard title="Total Users" value={String(users.length)} icon={Users} />
-        <StatsCard title="Total Deposits" value={`$${totalDeposits.toFixed(2)}`} icon={ArrowDownToLine} delay={0.1} />
-        <StatsCard title="Total Withdrawals" value={`$${totalWithdrawals.toFixed(2)}`} icon={ArrowUpFromLine} delay={0.2} />
-        <StatsCard title="Trading Volume" value={`$${totalVolume.toFixed(2)}`} icon={TrendingUp} delay={0.3} />
-        <StatsCard title="Pending Deletions" value={String(pendingDeletions)} icon={AlertTriangle} delay={0.4} />
+      <div className="grid grid-cols-2 lg:grid-cols-6 gap-3 sm:gap-4 mb-8">
+        <StatsCard title="Admin Wallet" value={`$${Number(profile?.wallet_balance || 0).toLocaleString()}`} icon={Wallet} />
+        <StatsCard title="Total Users" value={String(users.length)} icon={Users} delay={0.1} />
+        <StatsCard title="Total Deposits" value={`$${totalDeposits.toFixed(2)}`} icon={ArrowDownToLine} delay={0.2} />
+        <StatsCard title="Total Withdrawals" value={`$${totalWithdrawals.toFixed(2)}`} icon={ArrowUpFromLine} delay={0.3} />
+        <StatsCard title="Trading Volume" value={`$${totalVolume.toFixed(2)}`} icon={TrendingUp} delay={0.4} />
+        <StatsCard title="Pending Deletions" value={String(pendingDeletions)} icon={AlertTriangle} delay={0.5} />
       </div>
 
       <Tabs defaultValue="analytics" className="space-y-4">
