@@ -1,9 +1,9 @@
 import { Link } from 'react-router-dom';
 import { motion, useScroll, useTransform } from 'framer-motion';
-import { TrendingUp, Shield, Zap, ArrowRight, BarChart3, Globe, Users, Star, ChevronRight, Headphones } from 'lucide-react';
+import { TrendingUp, Shield, Zap, ArrowRight, BarChart3, Globe, Users, Star, ChevronRight, Headphones, Menu, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import heroBg from '@/assets/hero-bg.jpg';
-import { useRef } from 'react';
+import { useRef, useState } from 'react';
 
 const stats = [
   { value: '$2.4B+', label: 'Assets Under Management' },
@@ -38,70 +38,81 @@ export default function Landing() {
   const { scrollYProgress } = useScroll({ target: heroRef, offset: ['start start', 'end start'] });
   const heroY = useTransform(scrollYProgress, [0, 1], ['0%', '30%']);
   const heroOpacity = useTransform(scrollYProgress, [0, 0.8], [1, 0]);
+  const [mobileNav, setMobileNav] = useState(false);
 
   return (
     <div className="min-h-screen bg-background overflow-x-hidden">
       {/* Nav */}
       <header className="fixed top-0 left-0 right-0 z-50 glass">
-        <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3 sm:py-4 flex items-center justify-between">
           <Link to="/" className="flex items-center gap-2">
             <div className="h-8 w-8 rounded-lg bg-gradient-primary flex items-center justify-center">
               <TrendingUp className="h-4 w-4 text-primary-foreground" />
             </div>
-            <span className="text-xl font-bold text-foreground">TradeSphere</span>
+            <span className="text-lg sm:text-xl font-bold text-foreground">TradeSphere</span>
           </Link>
           <nav className="hidden md:flex items-center gap-8">
             <a href="#features" className="text-sm text-muted-foreground hover:text-foreground transition-colors">Features</a>
             <a href="#how-it-works" className="text-sm text-muted-foreground hover:text-foreground transition-colors">How It Works</a>
             <a href="#testimonials" className="text-sm text-muted-foreground hover:text-foreground transition-colors">Testimonials</a>
           </nav>
-          <div className="flex items-center gap-3">
+          <div className="hidden sm:flex items-center gap-3">
             <Link to="/login">
-              <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-foreground">
-                Sign In
-              </Button>
+              <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-foreground">Sign In</Button>
             </Link>
             <Link to="/register">
-              <Button size="sm" className="bg-gradient-primary text-primary-foreground hover:opacity-90">
-                Get Started
-              </Button>
+              <Button size="sm" className="bg-gradient-primary text-primary-foreground hover:opacity-90">Get Started</Button>
             </Link>
           </div>
+          <button className="sm:hidden" onClick={() => setMobileNav(!mobileNav)}>
+            {mobileNav ? <X className="h-6 w-6 text-foreground" /> : <Menu className="h-6 w-6 text-foreground" />}
+          </button>
         </div>
+        {/* Mobile nav dropdown */}
+        {mobileNav && (
+          <div className="sm:hidden border-t border-border bg-card px-4 py-4 space-y-3">
+            <a href="#features" onClick={() => setMobileNav(false)} className="block text-sm text-muted-foreground hover:text-foreground">Features</a>
+            <a href="#how-it-works" onClick={() => setMobileNav(false)} className="block text-sm text-muted-foreground hover:text-foreground">How It Works</a>
+            <a href="#testimonials" onClick={() => setMobileNav(false)} className="block text-sm text-muted-foreground hover:text-foreground">Testimonials</a>
+            <div className="flex gap-2 pt-2">
+              <Link to="/login" className="flex-1"><Button variant="outline" size="sm" className="w-full border-border">Sign In</Button></Link>
+              <Link to="/register" className="flex-1"><Button size="sm" className="w-full bg-gradient-primary text-primary-foreground">Get Started</Button></Link>
+            </div>
+          </div>
+        )}
       </header>
 
       {/* Hero */}
-      <section ref={heroRef} className="relative min-h-screen flex items-center justify-center overflow-hidden">
+      <section ref={heroRef} className="relative min-h-[100svh] flex items-center justify-center overflow-hidden">
         <motion.div
           className="absolute inset-0 bg-cover bg-center"
           style={{ backgroundImage: `url(${heroBg})`, y: heroY, opacity: 0.25 }}
         />
         <div className="absolute inset-0 bg-gradient-to-b from-background/40 via-background/70 to-background" />
-        {/* Subtle grid overlay */}
         <div className="absolute inset-0 opacity-[0.03]" style={{ backgroundImage: 'linear-gradient(hsl(var(--foreground)) 1px, transparent 1px), linear-gradient(90deg, hsl(var(--foreground)) 1px, transparent 1px)', backgroundSize: '60px 60px' }} />
 
-        <motion.div style={{ opacity: heroOpacity }} className="relative z-10 max-w-5xl mx-auto px-6 text-center pt-20">
+        <motion.div style={{ opacity: heroOpacity }} className="relative z-10 max-w-5xl mx-auto px-4 sm:px-6 text-center pt-20">
           <motion.div initial={{ opacity: 0, y: 40 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}>
-            <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-primary/20 bg-primary/5 text-primary text-sm font-medium mb-8">
+            <div className="inline-flex items-center gap-2 px-3 sm:px-4 py-1.5 rounded-full border border-primary/20 bg-primary/5 text-primary text-xs sm:text-sm font-medium mb-6 sm:mb-8">
               <span className="h-1.5 w-1.5 rounded-full bg-accent animate-pulse" />
               Markets are open — Start trading now
             </div>
-            <h1 className="text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-extrabold leading-[1.05] tracking-tight mb-8">
+            <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl xl:text-8xl font-extrabold leading-[1.05] tracking-tight mb-6 sm:mb-8">
               <span className="text-foreground">Invest in</span>
               <br />
               <span className="text-gradient-primary">Your Future</span>
             </h1>
-            <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto mb-10 leading-relaxed">
+            <p className="text-base sm:text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto mb-8 sm:mb-10 leading-relaxed px-2">
               Professional-grade trading platform with real-time data, instant execution, and bank-level security. Join 150,000+ traders worldwide.
             </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center mb-6">
-              <Link to="/register">
-                <Button size="lg" className="bg-gradient-primary text-primary-foreground hover:opacity-90 px-10 h-13 text-base glow-primary">
+            <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center mb-6 px-4 sm:px-0">
+              <Link to="/register" className="w-full sm:w-auto">
+                <Button size="lg" className="w-full sm:w-auto bg-gradient-primary text-primary-foreground hover:opacity-90 px-8 sm:px-10 h-12 sm:h-13 text-base glow-primary">
                   Create Free Account <ArrowRight className="ml-2 h-5 w-5" />
                 </Button>
               </Link>
-              <Link to="/login">
-                <Button size="lg" variant="outline" className="border-border text-foreground hover:bg-secondary px-10 h-13 text-base">
+              <Link to="/login" className="w-full sm:w-auto">
+                <Button size="lg" variant="outline" className="w-full sm:w-auto border-border text-foreground hover:bg-secondary px-8 sm:px-10 h-12 sm:h-13 text-base">
                   Sign In
                 </Button>
               </Link>
@@ -110,9 +121,8 @@ export default function Landing() {
           </motion.div>
         </motion.div>
 
-        {/* Scroll indicator */}
         <motion.div
-          className="absolute bottom-8 left-1/2 -translate-x-1/2 z-10"
+          className="absolute bottom-6 sm:bottom-8 left-1/2 -translate-x-1/2 z-10 hidden sm:block"
           animate={{ y: [0, 8, 0] }}
           transition={{ repeat: Infinity, duration: 2 }}
         >
@@ -123,13 +133,13 @@ export default function Landing() {
       </section>
 
       {/* Stats bar */}
-      <section className="relative z-10 -mt-16 px-6">
+      <section className="relative z-10 -mt-12 sm:-mt-16 px-4 sm:px-6">
         <div className="max-w-5xl mx-auto">
           <motion.div
             initial={{ opacity: 0, y: 30 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            className="glass rounded-2xl p-8 grid grid-cols-2 md:grid-cols-4 gap-8"
+            className="glass rounded-2xl p-6 sm:p-8 grid grid-cols-2 md:grid-cols-4 gap-4 sm:gap-8"
           >
             {stats.map((s, i) => (
               <motion.div
@@ -140,8 +150,8 @@ export default function Landing() {
                 transition={{ delay: i * 0.1 }}
                 className="text-center"
               >
-                <div className="text-2xl md:text-3xl font-bold text-gradient-primary mb-1">{s.value}</div>
-                <div className="text-xs md:text-sm text-muted-foreground">{s.label}</div>
+                <div className="text-xl sm:text-2xl md:text-3xl font-bold text-gradient-primary mb-1">{s.value}</div>
+                <div className="text-[10px] sm:text-xs md:text-sm text-muted-foreground">{s.label}</div>
               </motion.div>
             ))}
           </motion.div>
@@ -149,14 +159,14 @@ export default function Landing() {
       </section>
 
       {/* Features */}
-      <section id="features" className="py-28 px-6">
+      <section id="features" className="py-16 sm:py-28 px-4 sm:px-6">
         <div className="max-w-6xl mx-auto">
-          <motion.div initial={{ opacity: 0 }} whileInView={{ opacity: 1 }} viewport={{ once: true }} className="text-center mb-20">
-            <span className="text-primary text-sm font-semibold uppercase tracking-widest">Platform Features</span>
-            <h2 className="text-3xl md:text-5xl font-bold text-foreground mt-3 mb-5">Built for Serious Traders</h2>
-            <p className="text-muted-foreground max-w-xl mx-auto text-lg">Every tool you need to analyze, execute, and manage — all in one platform.</p>
+          <motion.div initial={{ opacity: 0 }} whileInView={{ opacity: 1 }} viewport={{ once: true }} className="text-center mb-12 sm:mb-20">
+            <span className="text-primary text-xs sm:text-sm font-semibold uppercase tracking-widest">Platform Features</span>
+            <h2 className="text-2xl sm:text-3xl md:text-5xl font-bold text-foreground mt-3 mb-4 sm:mb-5">Built for Serious Traders</h2>
+            <p className="text-muted-foreground max-w-xl mx-auto text-sm sm:text-lg">Every tool you need to analyze, execute, and manage — all in one platform.</p>
           </motion.div>
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
             {features.map((feature, i) => (
               <motion.div
                 key={feature.title}
@@ -164,15 +174,15 @@ export default function Landing() {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ delay: i * 0.08, ease: [0.16, 1, 0.3, 1] }}
-                className="group relative bg-gradient-card rounded-2xl border border-border p-8 hover:border-primary/30 transition-all duration-300 hover:-translate-y-1"
+                className="group relative bg-gradient-card rounded-2xl border border-border p-6 sm:p-8 hover:border-primary/30 transition-all duration-300 hover:-translate-y-1"
               >
                 <div className="absolute inset-0 rounded-2xl bg-primary/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                 <div className="relative">
-                  <div className="p-3 rounded-xl bg-primary/10 w-fit mb-5 group-hover:bg-primary/20 transition-colors">
-                    <feature.icon className="h-6 w-6 text-primary" />
+                  <div className="p-3 rounded-xl bg-primary/10 w-fit mb-4 sm:mb-5 group-hover:bg-primary/20 transition-colors">
+                    <feature.icon className="h-5 w-5 sm:h-6 sm:w-6 text-primary" />
                   </div>
-                  <h3 className="text-lg font-semibold text-foreground mb-2">{feature.title}</h3>
-                  <p className="text-muted-foreground text-sm leading-relaxed">{feature.desc}</p>
+                  <h3 className="text-base sm:text-lg font-semibold text-foreground mb-2">{feature.title}</h3>
+                  <p className="text-muted-foreground text-xs sm:text-sm leading-relaxed">{feature.desc}</p>
                 </div>
               </motion.div>
             ))}
@@ -181,14 +191,14 @@ export default function Landing() {
       </section>
 
       {/* How it works */}
-      <section id="how-it-works" className="py-28 px-6 bg-secondary/30">
+      <section id="how-it-works" className="py-16 sm:py-28 px-4 sm:px-6 bg-secondary/30">
         <div className="max-w-5xl mx-auto">
-          <motion.div initial={{ opacity: 0 }} whileInView={{ opacity: 1 }} viewport={{ once: true }} className="text-center mb-20">
-            <span className="text-primary text-sm font-semibold uppercase tracking-widest">Getting Started</span>
-            <h2 className="text-3xl md:text-5xl font-bold text-foreground mt-3 mb-5">Start Trading in Minutes</h2>
-            <p className="text-muted-foreground max-w-xl mx-auto text-lg">Three simple steps to go from signup to your first trade.</p>
+          <motion.div initial={{ opacity: 0 }} whileInView={{ opacity: 1 }} viewport={{ once: true }} className="text-center mb-12 sm:mb-20">
+            <span className="text-primary text-xs sm:text-sm font-semibold uppercase tracking-widest">Getting Started</span>
+            <h2 className="text-2xl sm:text-3xl md:text-5xl font-bold text-foreground mt-3 mb-4 sm:mb-5">Start Trading in Minutes</h2>
+            <p className="text-muted-foreground max-w-xl mx-auto text-sm sm:text-lg">Three simple steps to go from signup to your first trade.</p>
           </motion.div>
-          <div className="grid md:grid-cols-3 gap-8">
+          <div className="grid sm:grid-cols-3 gap-6 sm:gap-8">
             {steps.map((s, i) => (
               <motion.div
                 key={s.step}
@@ -198,13 +208,13 @@ export default function Landing() {
                 transition={{ delay: i * 0.15 }}
                 className="relative"
               >
-                <span className="text-6xl font-black text-primary/10 absolute -top-4 -left-2">{s.step}</span>
-                <div className="relative pt-10">
-                  <h3 className="text-xl font-bold text-foreground mb-3">{s.title}</h3>
-                  <p className="text-muted-foreground leading-relaxed">{s.desc}</p>
+                <span className="text-5xl sm:text-6xl font-black text-primary/10 absolute -top-4 -left-2">{s.step}</span>
+                <div className="relative pt-8 sm:pt-10">
+                  <h3 className="text-lg sm:text-xl font-bold text-foreground mb-2 sm:mb-3">{s.title}</h3>
+                  <p className="text-muted-foreground text-sm leading-relaxed">{s.desc}</p>
                 </div>
                 {i < steps.length - 1 && (
-                  <ChevronRight className="hidden md:block absolute top-12 -right-6 h-6 w-6 text-muted-foreground/30" />
+                  <ChevronRight className="hidden sm:block absolute top-10 sm:top-12 -right-4 sm:-right-6 h-5 w-5 sm:h-6 sm:w-6 text-muted-foreground/30" />
                 )}
               </motion.div>
             ))}
@@ -213,13 +223,13 @@ export default function Landing() {
       </section>
 
       {/* Testimonials */}
-      <section id="testimonials" className="py-28 px-6">
+      <section id="testimonials" className="py-16 sm:py-28 px-4 sm:px-6">
         <div className="max-w-6xl mx-auto">
-          <motion.div initial={{ opacity: 0 }} whileInView={{ opacity: 1 }} viewport={{ once: true }} className="text-center mb-20">
-            <span className="text-primary text-sm font-semibold uppercase tracking-widest">Testimonials</span>
-            <h2 className="text-3xl md:text-5xl font-bold text-foreground mt-3 mb-5">Trusted by Traders Worldwide</h2>
+          <motion.div initial={{ opacity: 0 }} whileInView={{ opacity: 1 }} viewport={{ once: true }} className="text-center mb-12 sm:mb-20">
+            <span className="text-primary text-xs sm:text-sm font-semibold uppercase tracking-widest">Testimonials</span>
+            <h2 className="text-2xl sm:text-3xl md:text-5xl font-bold text-foreground mt-3 mb-4 sm:mb-5">Trusted by Traders Worldwide</h2>
           </motion.div>
-          <div className="grid md:grid-cols-3 gap-6">
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
             {testimonials.map((t, i) => (
               <motion.div
                 key={t.name}
@@ -227,14 +237,14 @@ export default function Landing() {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ delay: i * 0.1 }}
-                className="bg-gradient-card rounded-2xl border border-border p-8"
+                className="bg-gradient-card rounded-2xl border border-border p-6 sm:p-8"
               >
                 <div className="flex gap-1 mb-4">
                   {Array.from({ length: t.rating }).map((_, j) => (
                     <Star key={j} className="h-4 w-4 fill-chart-yellow text-chart-yellow" />
                   ))}
                 </div>
-                <p className="text-foreground mb-6 leading-relaxed">"{t.text}"</p>
+                <p className="text-foreground mb-6 leading-relaxed text-sm sm:text-base">"{t.text}"</p>
                 <div className="flex items-center gap-3">
                   <div className="h-10 w-10 rounded-full bg-primary/20 flex items-center justify-center">
                     <Users className="h-4 w-4 text-primary" />
@@ -251,23 +261,23 @@ export default function Landing() {
       </section>
 
       {/* CTA */}
-      <section className="py-28 px-6">
+      <section className="py-16 sm:py-28 px-4 sm:px-6">
         <div className="max-w-4xl mx-auto">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            className="relative rounded-3xl overflow-hidden"
+            className="relative rounded-2xl sm:rounded-3xl overflow-hidden"
           >
             <div className="absolute inset-0 bg-gradient-primary opacity-90" />
             <div className="absolute inset-0 opacity-10" style={{ backgroundImage: 'radial-gradient(circle at 30% 50%, hsl(var(--foreground)) 1px, transparent 1px)', backgroundSize: '24px 24px' }} />
-            <div className="relative z-10 py-20 px-8 text-center">
-              <h2 className="text-3xl md:text-5xl font-bold text-primary-foreground mb-5">Ready to Start Investing?</h2>
-              <p className="text-primary-foreground/80 mb-10 text-lg max-w-xl mx-auto">
+            <div className="relative z-10 py-12 sm:py-20 px-6 sm:px-8 text-center">
+              <h2 className="text-2xl sm:text-3xl md:text-5xl font-bold text-primary-foreground mb-4 sm:mb-5">Ready to Start Investing?</h2>
+              <p className="text-primary-foreground/80 mb-8 sm:mb-10 text-sm sm:text-lg max-w-xl mx-auto">
                 Join thousands of traders who trust TradeSphere. Create your free account and start trading in minutes.
               </p>
               <Link to="/register">
-                <Button size="lg" className="bg-background text-foreground hover:bg-background/90 px-12 h-13 text-base font-semibold">
+                <Button size="lg" className="bg-background text-foreground hover:bg-background/90 px-8 sm:px-12 h-12 sm:h-13 text-sm sm:text-base font-semibold">
                   Get Started — It's Free <ArrowRight className="ml-2 h-5 w-5" />
                 </Button>
               </Link>
@@ -277,21 +287,21 @@ export default function Landing() {
       </section>
 
       {/* Footer */}
-      <footer className="border-t border-border py-12 px-6">
+      <footer className="border-t border-border py-8 sm:py-12 px-4 sm:px-6">
         <div className="max-w-6xl mx-auto">
-          <div className="flex flex-col md:flex-row items-center justify-between gap-6">
+          <div className="flex flex-col gap-6 items-center text-center">
             <div className="flex items-center gap-2">
               <div className="h-7 w-7 rounded-lg bg-gradient-primary flex items-center justify-center">
                 <TrendingUp className="h-3.5 w-3.5 text-primary-foreground" />
               </div>
               <span className="font-bold text-foreground">TradeSphere</span>
             </div>
-            <div className="flex items-center gap-8">
+            <div className="flex flex-wrap items-center justify-center gap-4 sm:gap-8">
               <a href="#features" className="text-sm text-muted-foreground hover:text-foreground transition-colors">Features</a>
               <a href="#how-it-works" className="text-sm text-muted-foreground hover:text-foreground transition-colors">How It Works</a>
               <a href="#testimonials" className="text-sm text-muted-foreground hover:text-foreground transition-colors">Testimonials</a>
             </div>
-            <span className="text-sm text-muted-foreground">© 2026 TradeSphere. All rights reserved.</span>
+            <span className="text-xs sm:text-sm text-muted-foreground">© 2026 TradeSphere. All rights reserved.</span>
           </div>
         </div>
       </footer>

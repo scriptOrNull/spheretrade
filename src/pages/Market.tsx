@@ -27,7 +27,6 @@ export default function Market() {
   useEffect(() => {
     fetchStocks();
     const interval = setInterval(() => {
-      // Simulate price changes
       setStocks(prev => prev.map(s => {
         const change = (Math.random() - 0.5) * 2;
         const newPrice = Math.max(1, Number(s.current_price) + change);
@@ -44,9 +43,9 @@ export default function Market() {
 
   return (
     <DashboardLayout>
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4 mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-foreground">Market</h1>
+          <h1 className="text-xl sm:text-2xl font-bold text-foreground">Market</h1>
           <p className="text-muted-foreground text-sm">Browse and trade stocks</p>
         </div>
         <div className="relative w-full sm:w-72">
@@ -62,27 +61,27 @@ export default function Market() {
             initial={{ opacity: 0, x: -10 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ delay: i * 0.03 }}
-            className="bg-card border border-border rounded-xl p-4 flex items-center justify-between hover:border-primary/30 transition-colors"
+            className="bg-card border border-border rounded-xl p-3 sm:p-4 flex items-center justify-between hover:border-primary/30 transition-colors"
           >
-            <div className="flex items-center gap-4">
-              <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
+            <div className="flex items-center gap-3 sm:gap-4 min-w-0">
+              <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
                 <span className="text-xs font-bold text-primary font-mono">{stock.symbol.slice(0, 2)}</span>
               </div>
-              <div>
-                <div className="font-semibold text-foreground font-mono">{stock.symbol}</div>
-                <div className="text-sm text-muted-foreground">{stock.company_name}</div>
+              <div className="min-w-0">
+                <div className="font-semibold text-foreground font-mono text-sm">{stock.symbol}</div>
+                <div className="text-xs sm:text-sm text-muted-foreground truncate">{stock.company_name}</div>
               </div>
             </div>
-            <div className="flex items-center gap-6">
+            <div className="flex items-center gap-3 sm:gap-6 shrink-0">
               <div className="text-right">
-                <div className="font-semibold text-foreground font-mono">${Number(stock.current_price).toFixed(2)}</div>
+                <div className="font-semibold text-foreground font-mono text-sm">${Number(stock.current_price).toFixed(2)}</div>
                 <div className={`flex items-center gap-1 text-xs ${stock.price_change_pct >= 0 ? 'text-accent' : 'text-destructive'}`}>
                   {stock.price_change_pct >= 0 ? <TrendingUp className="h-3 w-3" /> : <TrendingDown className="h-3 w-3" />}
                   {stock.price_change_pct >= 0 ? '+' : ''}{Number(stock.price_change_pct).toFixed(2)}%
                 </div>
               </div>
               <Link to={`/stock/${stock.id}`}>
-                <Button size="sm" className="bg-gradient-primary text-primary-foreground hover:opacity-90">
+                <Button size="sm" className="bg-gradient-primary text-primary-foreground hover:opacity-90 text-xs sm:text-sm">
                   Trade
                 </Button>
               </Link>

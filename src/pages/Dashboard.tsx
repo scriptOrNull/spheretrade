@@ -7,11 +7,14 @@ import { supabase } from '@/integrations/supabase/client';
 import { Wallet, TrendingUp, Percent, ArrowDownToLine, ArrowUpFromLine, ShoppingCart } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { motion } from 'framer-motion';
+import UserBadge from '@/components/UserBadge';
+import { getTierByTrades } from '@/lib/badges';
 
 export default function Dashboard() {
   const { profile, user, refreshProfile } = useAuth();
   const [transactions, setTransactions] = useState<any[]>([]);
   const [portfolioValue, setPortfolioValue] = useState(0);
+  const [tradeCount, setTradeCount] = useState(0);
 
   useEffect(() => {
     if (!user) return;
@@ -25,6 +28,13 @@ export default function Dashboard() {
         .order('created_at', { ascending: false })
         .limit(5);
       setTransactions(txns || []);
+
+      const { count } = await supabase
+        .from('transactions')
+        .select('id', { count: 'exact', head: true })
+        .eq('user_id', user.id)
+        .in('type', ['buy', 'sell']);
+      setTradeCount(count || 0);
 
       const { data: portfolio } = await supabase
         .from('portfolio')
@@ -52,24 +62,29 @@ export default function Dashboard() {
     ? (((portfolioValue + Number(profile.wallet_balance)) / 10000 - 1) * 100).toFixed(2)
     : '0.00';
 
+  const tier = getTierByTrades(tradeCount);
+
   return (
     <DashboardLayout>
-      <div className="mb-8">
-        <h1 className="text-2xl font-bold text-foreground">Welcome back, {profile?.full_name || 'Trader'}</h1>
-        <p className="text-muted-foreground text-sm mt-1">Here's your trading overview</p>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6 sm:mb-8">
+        <div>
+          <h1 className="text-xl sm:text-2xl font-bold text-foreground">Welcome back, {profile?.full_name || 'Trader'}</h1>
+          <p className="text-muted-foreground text-sm mt-1">Here's your trading overview</p>
+        </div>
+        <UserBadge tier={tier} size="md" />
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 mb-6 sm:mb-8">
         <StatsCard title="Wallet Balance" value={`$${Number(profile?.wallet_balance || 0).toLocaleString('en-US', { minimumFractionDigits: 2 })}`} icon={Wallet} delay={0} />
         <StatsCard title="Portfolio Value" value={`$${portfolioValue.toLocaleString('en-US', { minimumFractionDigits: 2 })}`} icon={TrendingUp} delay={0.1} />
         <StatsCard title="Total P/L" value={`${totalPL}%`} icon={Percent} trend={`${totalPL}%`} trendUp={Number(totalPL) >= 0} delay={0.2} />
       </div>
 
       {/* Quick Actions */}
-      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.3 }} className="flex flex-wrap gap-3 mb-8">
-        <Link to="/market"><Button className="bg-gradient-primary text-primary-foreground hover:opacity-90"><ShoppingCart className="h-4 w-4 mr-2" /> Buy Stocks</Button></Link>
-        <Link to="/deposit"><Button variant="outline" className="border-border"><ArrowDownToLine className="h-4 w-4 mr-2" /> Deposit</Button></Link>
-        <Link to="/withdraw"><Button variant="outline" className="border-border"><ArrowUpFromLine className="h-4 w-4 mr-2" /> Withdraw</Button></Link>
+      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.3 }} className="flex flex-wrap gap-2 sm:gap-3 mb-6 sm:mb-8">
+        <Link to="/market"><Button size="sm" className="bg-gradient-primary text-primary-foreground hover:opacity-90 text-xs sm:text-sm"><ShoppingCart className="h-4 w-4 mr-1 sm:mr-2" /> Buy Stocks</Button></Link>
+        <Link to="/deposit"><Button size="sm" variant="outline" className="border-border text-xs sm:text-sm"><ArrowDownToLine className="h-4 w-4 mr-1 sm:mr-2" /> Deposit</Button></Link>
+        <Link to="/withdraw"><Button size="sm" variant="outline" className="border-border text-xs sm:text-sm"><ArrowUpFromLine className="h-4 w-4 mr-1 sm:mr-2" /> Withdraw</Button></Link>
       </motion.div>
 
       {/* Recent Transactions */}
@@ -77,7 +92,7 @@ export default function Dashboard() {
         <h2 className="text-lg font-semibold text-foreground mb-4">Recent Transactions</h2>
         <div className="bg-card border border-border rounded-xl overflow-hidden">
           <div className="overflow-x-auto">
-            <table className="w-full text-sm">
+            <table className="w-full text-sm min-w-[500px]">
               <thead>
                 <tr className="border-b border-border">
                   <th className="text-left px-4 py-3 text-muted-foreground font-medium">Type</th>
