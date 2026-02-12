@@ -16,46 +16,64 @@ export default function Dashboard() {
   const [portfolioValue, setPortfolioValue] = useState(0);
   const [tradeCount, setTradeCount] = useState(0);
 
+  const fetchData = async () => {
+    if (!user) return;
+    const { data: txns } = await supabase
+      .from('transactions')
+      .select('*')
+      .eq('user_id', user.id)
+      .order('created_at', { ascending: false })
+      .limit(5);
+    setTransactions(txns || []);
+
+    const { count } = await supabase
+      .from('transactions')
+      .select('id', { count: 'exact', head: true })
+      .eq('user_id', user.id)
+      .in('type', ['buy', 'sell']);
+    setTradeCount(count || 0);
+
+    const { data: portfolio } = await supabase
+      .from('portfolio')
+      .select('quantity, average_price, stock_id')
+      .eq('user_id', user.id);
+
+    if (portfolio && portfolio.length > 0) {
+      const stockIds = portfolio.map(p => p.stock_id);
+      const { data: stocks } = await supabase
+        .from('stocks')
+        .select('id, current_price')
+        .in('id', stockIds);
+
+      const value = portfolio.reduce((sum, p) => {
+        const stock = stocks?.find(s => s.id === p.stock_id);
+        return sum + (stock ? Number(stock.current_price) * Number(p.quantity) : 0);
+      }, 0);
+      setPortfolioValue(value);
+    }
+  };
+
   useEffect(() => {
     if (!user) return;
     refreshProfile();
-
-    const fetchData = async () => {
-      const { data: txns } = await supabase
-        .from('transactions')
-        .select('*')
-        .eq('user_id', user.id)
-        .order('created_at', { ascending: false })
-        .limit(5);
-      setTransactions(txns || []);
-
-      const { count } = await supabase
-        .from('transactions')
-        .select('id', { count: 'exact', head: true })
-        .eq('user_id', user.id)
-        .in('type', ['buy', 'sell']);
-      setTradeCount(count || 0);
-
-      const { data: portfolio } = await supabase
-        .from('portfolio')
-        .select('quantity, average_price, stock_id')
-        .eq('user_id', user.id);
-
-      if (portfolio && portfolio.length > 0) {
-        const stockIds = portfolio.map(p => p.stock_id);
-        const { data: stocks } = await supabase
-          .from('stocks')
-          .select('id, current_price')
-          .in('id', stockIds);
-
-        const value = portfolio.reduce((sum, p) => {
-          const stock = stocks?.find(s => s.id === p.stock_id);
-          return sum + (stock ? Number(stock.current_price) * Number(p.quantity) : 0);
-        }, 0);
-        setPortfolioValue(value);
-      }
-    };
     fetchData();
+  }, [user]);
+
+  // Realtime subscription for transaction updates
+  useEffect(() => {
+    if (!user) return;
+    const channel = supabase
+      .channel('user-transactions')
+      .on(
+        'postgres_changes',
+        { event: 'UPDATE', schema: 'public', table: 'transactions', filter: `user_id=eq.${user.id}` },
+        (payload) => {
+          const updated = payload.new as any;
+          setTransactions(prev => prev.map(tx => tx.id === updated.id ? updated : tx));
+        }
+      )
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
   }, [user]);
 
   const totalPL = portfolioValue > 0 && profile
