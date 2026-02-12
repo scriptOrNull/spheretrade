@@ -214,7 +214,21 @@ export default function Deposit() {
                   <motion.div key="payment" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-5">
                     <div>
                       <h2 className="text-lg font-semibold text-foreground mb-1">Send {crypto}</h2>
-                      <p className="text-sm text-muted-foreground">Send your {crypto} to the address below. You have 30 minutes to complete this payment.</p>
+                      <p className="text-sm text-muted-foreground">Enter the amount and send your {crypto} to the address below within 30 minutes.</p>
+                    </div>
+
+                    {/* Amount */}
+                    <div>
+                      <Label>Amount to Send (USD equivalent)</Label>
+                      <Input
+                        type="number"
+                        min="1"
+                        step="0.01"
+                        value={amount}
+                        onChange={e => setAmount(e.target.value)}
+                        className="mt-1 bg-secondary border-border font-mono"
+                        placeholder="e.g. 500.00"
+                      />
                     </div>
 
                     {/* Timer */}
@@ -265,7 +279,7 @@ export default function Deposit() {
                       </Button>
                       <Button
                         onClick={goToConfirm}
-                        disabled={secondsLeft <= 0}
+                        disabled={secondsLeft <= 0 || !amount || Number(amount) <= 0}
                         className="flex-1 bg-gradient-primary text-primary-foreground hover:opacity-90"
                       >
                         I've Sent the Payment <ArrowRight className="ml-2 h-4 w-4" />
@@ -279,21 +293,7 @@ export default function Deposit() {
                   <motion.div key="confirm" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-5">
                     <div>
                       <h2 className="text-lg font-semibold text-foreground mb-1">Confirm Your Payment</h2>
-                      <p className="text-sm text-muted-foreground">Enter the transaction details so our team can verify your deposit.</p>
-                    </div>
-
-                    <div>
-                      <Label>Amount Sent (USD equivalent)</Label>
-                      <Input
-                        type="number"
-                        min="1"
-                        step="0.01"
-                        value={amount}
-                        onChange={e => setAmount(e.target.value)}
-                        required
-                        className="mt-1 bg-secondary border-border font-mono"
-                        placeholder="e.g. 500.00"
-                      />
+                      <p className="text-sm text-muted-foreground">Enter the transaction hash so our team can verify your <strong className="text-foreground">${Number(amount).toFixed(2)}</strong> {crypto} deposit.</p>
                     </div>
 
                     <div>
