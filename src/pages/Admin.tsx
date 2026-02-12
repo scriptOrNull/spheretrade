@@ -6,9 +6,9 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import StatsCard from '@/components/StatsCard';
-import { Users, ArrowDownToLine, ArrowUpFromLine, TrendingUp } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { Users, ArrowDownToLine, ArrowUpFromLine, TrendingUp, Wallet } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Label } from '@/components/ui/label';
 
 export default function Admin() {
   const { isAdmin } = useAuth();
@@ -18,18 +18,26 @@ export default function Admin() {
   const [withdrawals, setWithdrawals] = useState<any[]>([]);
   const [transactions, setTransactions] = useState<any[]>([]);
   const [balanceEdit, setBalanceEdit] = useState<Record<string, string>>({});
+  const [adminWallets, setAdminWallets] = useState<any[]>([]);
+  const [walletEdits, setWalletEdits] = useState<Record<string, string>>({});
 
   const fetchAll = async () => {
-    const [u, d, w, t] = await Promise.all([
+    const [u, d, w, t, aw] = await Promise.all([
       supabase.from('profiles').select('*'),
       supabase.from('deposits').select('*').order('created_at', { ascending: false }),
       supabase.from('withdrawals').select('*').order('created_at', { ascending: false }),
       supabase.from('transactions').select('*').order('created_at', { ascending: false }).limit(50),
+      supabase.from('admin_wallets').select('*').order('crypto_type'),
     ]);
     setUsers(u.data || []);
     setDeposits(d.data || []);
     setWithdrawals(w.data || []);
     setTransactions(t.data || []);
+    setAdminWallets(aw.data || []);
+    // Init wallet edits
+    const edits: Record<string, string> = {};
+    (aw.data || []).forEach((w: any) => { edits[w.id] = w.wallet_address; });
+    setWalletEdits(edits);
   };
 
   useEffect(() => { if (isAdmin) fetchAll(); }, [isAdmin]);
@@ -68,6 +76,14 @@ export default function Admin() {
     fetchAll();
   };
 
+  const handleWalletUpdate = async (walletId: string) => {
+    const addr = walletEdits[walletId]?.trim();
+    if (addr === undefined) return;
+    await supabase.from('admin_wallets').update({ wallet_address: addr, updated_at: new Date().toISOString() }).eq('id', walletId);
+    toast({ title: 'Wallet address updated' });
+    fetchAll();
+  };
+
   const totalDeposits = deposits.filter(d => d.status === 'approved').reduce((s, d) => s + Number(d.amount), 0);
   const totalWithdrawals = withdrawals.filter(w => w.status === 'approved').reduce((s, w) => s + Number(w.amount), 0);
   const totalVolume = transactions.filter(t => t.type === 'buy' || t.type === 'sell').reduce((s, t) => s + Number(t.amount), 0);
@@ -76,7 +92,7 @@ export default function Admin() {
     <DashboardLayout>
       <div className="mb-6">
         <h1 className="text-2xl font-bold text-foreground">Admin Dashboard</h1>
-        <p className="text-muted-foreground text-sm">Manage users, deposits, and withdrawals</p>
+        <p className="text-muted-foreground text-sm">Manage users, deposits, withdrawals, and wallets</p>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
@@ -91,6 +107,7 @@ export default function Admin() {
           <TabsTrigger value="deposits">Deposits ({deposits.filter(d => d.status === 'pending').length})</TabsTrigger>
           <TabsTrigger value="withdrawals">Withdrawals ({withdrawals.filter(w => w.status === 'pending').length})</TabsTrigger>
           <TabsTrigger value="users">Users</TabsTrigger>
+          <TabsTrigger value="wallets">Wallets</TabsTrigger>
           <TabsTrigger value="transactions">Transactions</TabsTrigger>
         </TabsList>
 
@@ -203,6 +220,36 @@ export default function Admin() {
                 ))}
               </tbody>
             </table>
+          </div>
+        </TabsContent>
+
+        <TabsContent value="wallets">
+          <div className="bg-card border border-border rounded-xl p-6">
+            <div className="flex items-center gap-2 mb-4">
+              <Wallet className="h-5 w-5 text-primary" />
+              <h3 className="text-lg font-semibold text-foreground">Deposit Wallet Addresses</h3>
+            </div>
+            <p className="text-muted-foreground text-sm mb-6">Set the wallet addresses users will send deposits to. Leave empty to disable a crypto type.</p>
+            <div className="space-y-4">
+              {adminWallets.map(w => (
+                <div key={w.id} className="flex items-end gap-3">
+                  <div className="w-20">
+                    <Label className="text-xs text-muted-foreground">{w.crypto_type}</Label>
+                  </div>
+                  <div className="flex-1">
+                    <Input
+                      value={walletEdits[w.id] || ''}
+                      onChange={e => setWalletEdits(prev => ({ ...prev, [w.id]: e.target.value }))}
+                      className="bg-secondary border-border font-mono text-xs h-9"
+                      placeholder={`Enter ${w.crypto_type} wallet address`}
+                    />
+                  </div>
+                  <Button size="sm" onClick={() => handleWalletUpdate(w.id)} className="h-9 bg-primary/10 text-primary hover:bg-primary/20 text-xs">
+                    Save
+                  </Button>
+                </div>
+              ))}
+            </div>
           </div>
         </TabsContent>
 
