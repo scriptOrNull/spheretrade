@@ -117,14 +117,6 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 </Link>
               );
             })}
-            {isAdmin && (
-              <Link to="/admin" onClick={() => setMobileOpen(false)} className={`flex items-center gap-3 px-3 py-3 rounded-lg text-sm font-medium transition-all ${
-                location.pathname === '/admin' ? 'bg-primary/10 text-primary' : 'text-muted-foreground hover:text-foreground hover:bg-secondary'
-              }`}>
-                <Shield className="h-4 w-4" />
-                Admin
-              </Link>
-            )}
             <button onClick={handleSignOut} className="flex items-center gap-3 px-3 py-3 rounded-lg text-sm font-medium text-destructive w-full">
               <LogOut className="h-4 w-4" />
               Sign Out
