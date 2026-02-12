@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import DashboardLayout from '@/components/DashboardLayout';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/lib/auth';
@@ -6,11 +6,23 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import StatsCard from '@/components/StatsCard';
-import { Users, ArrowDownToLine, ArrowUpFromLine, TrendingUp, Wallet } from 'lucide-react';
+import {
+  Users, ArrowDownToLine, ArrowUpFromLine, TrendingUp, Wallet,
+  Search, Trash2, AlertTriangle, BarChart3, Clock,
+} from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Label } from '@/components/ui/label';
 import UserBadge from '@/components/UserBadge';
 import { getTierByTrades } from '@/lib/badges';
+import {
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+} from '@/components/ui/select';
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 
 export default function Admin() {
   const { isAdmin } = useAuth();
@@ -23,25 +35,34 @@ export default function Admin() {
   const [adminWallets, setAdminWallets] = useState<any[]>([]);
   const [walletEdits, setWalletEdits] = useState<Record<string, string>>({});
   const [userTradeCounts, setUserTradeCounts] = useState<Record<string, number>>({});
+  const [deletionRequests, setDeletionRequests] = useState<any[]>([]);
+
+  // Filters
+  const [userSearch, setUserSearch] = useState('');
+  const [txSearch, setTxSearch] = useState('');
+  const [txTypeFilter, setTxTypeFilter] = useState('all');
+  const [depositFilter, setDepositFilter] = useState('all');
+  const [withdrawalFilter, setWithdrawalFilter] = useState('all');
 
   const fetchAll = async () => {
-    const [u, d, w, t, aw] = await Promise.all([
+    const [u, d, w, t, aw, dr] = await Promise.all([
       supabase.from('profiles').select('*'),
       supabase.from('deposits').select('*').order('created_at', { ascending: false }),
       supabase.from('withdrawals').select('*').order('created_at', { ascending: false }),
-      supabase.from('transactions').select('*').order('created_at', { ascending: false }).limit(50),
+      supabase.from('transactions').select('*').order('created_at', { ascending: false }).limit(200),
       supabase.from('admin_wallets').select('*').order('crypto_type'),
+      supabase.from('account_deletions').select('*').order('requested_at', { ascending: false }),
     ]);
     setUsers(u.data || []);
     setDeposits(d.data || []);
     setWithdrawals(w.data || []);
     setTransactions(t.data || []);
     setAdminWallets(aw.data || []);
+    setDeletionRequests(dr.data || []);
     const edits: Record<string, string> = {};
     (aw.data || []).forEach((w: any) => { edits[w.id] = w.wallet_address; });
     setWalletEdits(edits);
 
-    // Count trades per user
     const allTx = t.data || [];
     const counts: Record<string, number> = {};
     allTx.filter((tx: any) => tx.type === 'buy' || tx.type === 'sell').forEach((tx: any) => {
@@ -51,6 +72,62 @@ export default function Admin() {
   };
 
   useEffect(() => { if (isAdmin) fetchAll(); }, [isAdmin]);
+
+  // Filtered data
+  const filteredUsers = useMemo(() => {
+    if (!userSearch) return users;
+    const q = userSearch.toLowerCase();
+    return users.filter(u => u.full_name?.toLowerCase().includes(q) || u.email?.toLowerCase().includes(q));
+  }, [users, userSearch]);
+
+  const filteredDeposits = useMemo(() => {
+    if (depositFilter === 'all') return deposits;
+    return deposits.filter(d => d.status === depositFilter);
+  }, [deposits, depositFilter]);
+
+  const filteredWithdrawals = useMemo(() => {
+    if (withdrawalFilter === 'all') return withdrawals;
+    return withdrawals.filter(w => w.status === withdrawalFilter);
+  }, [withdrawals, withdrawalFilter]);
+
+  const filteredTransactions = useMemo(() => {
+    let filtered = transactions;
+    if (txTypeFilter !== 'all') filtered = filtered.filter(t => t.type === txTypeFilter);
+    if (txSearch) {
+      const q = txSearch.toLowerCase();
+      filtered = filtered.filter(t => {
+        const u = users.find(u => u.id === t.user_id);
+        return u?.email?.toLowerCase().includes(q) || t.stock_symbol?.toLowerCase().includes(q);
+      });
+    }
+    return filtered;
+  }, [transactions, txTypeFilter, txSearch, users]);
+
+  // Analytics
+  const totalDeposits = deposits.filter(d => d.status === 'approved').reduce((s, d) => s + Number(d.amount), 0);
+  const totalWithdrawals = withdrawals.filter(w => w.status === 'approved').reduce((s, w) => s + Number(w.amount), 0);
+  const totalVolume = transactions.filter(t => t.type === 'buy' || t.type === 'sell').reduce((s, t) => s + Number(t.amount), 0);
+  const pendingDeletions = deletionRequests.filter(d => d.status === 'pending').length;
+
+  const txTypeData = useMemo(() => {
+    const counts: Record<string, number> = {};
+    transactions.forEach(t => { counts[t.type] = (counts[t.type] || 0) + 1; });
+    return Object.entries(counts).map(([name, value]) => ({ name, value }));
+  }, [transactions]);
+
+  const monthlyVolumeData = useMemo(() => {
+    const months: Record<string, number> = {};
+    transactions.forEach(t => {
+      const month = new Date(t.created_at).toLocaleDateString('en-US', { month: 'short', year: '2-digit' });
+      months[month] = (months[month] || 0) + Number(t.amount);
+    });
+    return Object.entries(months).slice(-6).map(([month, volume]) => ({ month, volume }));
+  }, [transactions]);
+
+  const PIE_COLORS = [
+    'hsl(210, 100%, 52%)', 'hsl(145, 65%, 42%)',
+    'hsl(0, 72%, 51%)', 'hsl(45, 93%, 58%)', 'hsl(280, 60%, 50%)',
+  ];
 
   if (!isAdmin) return <DashboardLayout><p className="text-destructive">Access denied</p></DashboardLayout>;
 
@@ -94,9 +171,30 @@ export default function Admin() {
     fetchAll();
   };
 
-  const totalDeposits = deposits.filter(d => d.status === 'approved').reduce((s, d) => s + Number(d.amount), 0);
-  const totalWithdrawals = withdrawals.filter(w => w.status === 'approved').reduce((s, w) => s + Number(w.amount), 0);
-  const totalVolume = transactions.filter(t => t.type === 'buy' || t.type === 'sell').reduce((s, t) => s + Number(t.amount), 0);
+  const handleDeleteUser = async (userId: string) => {
+    try {
+      const res = await supabase.functions.invoke('delete-user', { body: { userId } });
+      if (res.error) throw res.error;
+      toast({ title: 'User deleted successfully' });
+      fetchAll();
+    } catch {
+      toast({ title: 'Failed to delete user', variant: 'destructive' });
+    }
+  };
+
+  const handleDeletionRequestAction = async (id: string, userId: string, action: 'approve' | 'cancel') => {
+    if (action === 'approve') {
+      await handleDeleteUser(userId);
+      await supabase.from('account_deletions').delete().eq('id', id);
+    } else {
+      await supabase.from('account_deletions').update({ status: 'cancelled' }).eq('id', id);
+    }
+    toast({ title: action === 'approve' ? 'User deleted' : 'Deletion cancelled' });
+    fetchAll();
+  };
+
+
+
 
   return (
     <DashboardLayout>
@@ -105,24 +203,82 @@ export default function Admin() {
         <p className="text-muted-foreground text-sm">Manage users, deposits, withdrawals, and wallets</p>
       </div>
 
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-8">
+      <div className="grid grid-cols-2 lg:grid-cols-5 gap-3 sm:gap-4 mb-8">
         <StatsCard title="Total Users" value={String(users.length)} icon={Users} />
         <StatsCard title="Total Deposits" value={`$${totalDeposits.toFixed(2)}`} icon={ArrowDownToLine} delay={0.1} />
         <StatsCard title="Total Withdrawals" value={`$${totalWithdrawals.toFixed(2)}`} icon={ArrowUpFromLine} delay={0.2} />
         <StatsCard title="Trading Volume" value={`$${totalVolume.toFixed(2)}`} icon={TrendingUp} delay={0.3} />
+        <StatsCard title="Pending Deletions" value={String(pendingDeletions)} icon={AlertTriangle} delay={0.4} />
       </div>
 
-      <Tabs defaultValue="deposits" className="space-y-4">
+      <Tabs defaultValue="analytics" className="space-y-4">
         <TabsList className="bg-secondary border border-border flex-wrap h-auto gap-1">
+          <TabsTrigger value="analytics" className="text-xs sm:text-sm">Analytics</TabsTrigger>
           <TabsTrigger value="deposits" className="text-xs sm:text-sm">Deposits ({deposits.filter(d => d.status === 'pending').length})</TabsTrigger>
           <TabsTrigger value="withdrawals" className="text-xs sm:text-sm">Withdrawals ({withdrawals.filter(w => w.status === 'pending').length})</TabsTrigger>
           <TabsTrigger value="users" className="text-xs sm:text-sm">Users</TabsTrigger>
           <TabsTrigger value="wallets" className="text-xs sm:text-sm">Wallets</TabsTrigger>
           <TabsTrigger value="transactions" className="text-xs sm:text-sm">Transactions</TabsTrigger>
+          <TabsTrigger value="deletions" className="text-xs sm:text-sm">Deletions ({pendingDeletions})</TabsTrigger>
         </TabsList>
 
+        {/* Analytics Tab */}
+        <TabsContent value="analytics">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            <div className="bg-card border border-border rounded-xl p-4 sm:p-6">
+              <div className="flex items-center gap-2 mb-4">
+                <BarChart3 className="h-5 w-5 text-primary" />
+                <h3 className="text-sm font-semibold text-foreground">Monthly Volume</h3>
+              </div>
+              <div className="h-64">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={monthlyVolumeData}>
+                    <XAxis dataKey="month" tick={{ fill: 'hsl(215, 15%, 55%)', fontSize: 12 }} axisLine={false} tickLine={false} />
+                    <YAxis tick={{ fill: 'hsl(215, 15%, 55%)', fontSize: 12 }} axisLine={false} tickLine={false} tickFormatter={v => `$${v}`} />
+                    <Tooltip
+                      contentStyle={{ background: 'hsl(220, 18%, 11%)', border: '1px solid hsl(220, 16%, 18%)', borderRadius: '8px', color: 'hsl(210, 20%, 95%)' }}
+                      formatter={(v: number) => [`$${v.toFixed(2)}`, 'Volume']}
+                    />
+                    <Bar dataKey="volume" fill="hsl(210, 100%, 52%)" radius={[4, 4, 0, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+            <div className="bg-card border border-border rounded-xl p-4 sm:p-6">
+              <div className="flex items-center gap-2 mb-4">
+                <TrendingUp className="h-5 w-5 text-primary" />
+                <h3 className="text-sm font-semibold text-foreground">Transaction Types</h3>
+              </div>
+              <div className="h-64">
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie data={txTypeData} cx="50%" cy="50%" innerRadius={50} outerRadius={90} dataKey="value" label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}>
+                      {txTypeData.map((_, i) => (
+                        <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />
+                      ))}
+                    </Pie>
+                    <Tooltip contentStyle={{ background: 'hsl(220, 18%, 11%)', border: '1px solid hsl(220, 16%, 18%)', borderRadius: '8px', color: 'hsl(210, 20%, 95%)' }} />
+                  </PieChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+          </div>
+        </TabsContent>
+
+        {/* Deposits Tab */}
         <TabsContent value="deposits">
           <div className="bg-card border border-border rounded-xl overflow-hidden">
+            <div className="p-3 border-b border-border flex items-center gap-2">
+              <Select value={depositFilter} onValueChange={setDepositFilter}>
+                <SelectTrigger className="w-32 h-8 text-xs bg-secondary border-border"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All</SelectItem>
+                  <SelectItem value="pending">Pending</SelectItem>
+                  <SelectItem value="approved">Approved</SelectItem>
+                  <SelectItem value="rejected">Rejected</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
             <div className="overflow-x-auto">
               <table className="w-full text-sm min-w-[600px]">
                 <thead><tr className="border-b border-border">
@@ -134,7 +290,7 @@ export default function Admin() {
                   <th className="text-right px-4 py-3 text-muted-foreground font-medium">Actions</th>
                 </tr></thead>
                 <tbody>
-                  {deposits.map(d => {
+                  {filteredDeposits.map(d => {
                     const u = users.find(u => u.id === d.user_id);
                     return (
                       <tr key={d.id} className="border-b border-border/50">
@@ -156,14 +312,27 @@ export default function Admin() {
                       </tr>
                     );
                   })}
+                  {filteredDeposits.length === 0 && <tr><td colSpan={6} className="px-4 py-8 text-center text-muted-foreground">No deposits found</td></tr>}
                 </tbody>
               </table>
             </div>
           </div>
         </TabsContent>
 
+        {/* Withdrawals Tab */}
         <TabsContent value="withdrawals">
           <div className="bg-card border border-border rounded-xl overflow-hidden">
+            <div className="p-3 border-b border-border flex items-center gap-2">
+              <Select value={withdrawalFilter} onValueChange={setWithdrawalFilter}>
+                <SelectTrigger className="w-32 h-8 text-xs bg-secondary border-border"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All</SelectItem>
+                  <SelectItem value="pending">Pending</SelectItem>
+                  <SelectItem value="approved">Approved</SelectItem>
+                  <SelectItem value="rejected">Rejected</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
             <div className="overflow-x-auto">
               <table className="w-full text-sm min-w-[600px]">
                 <thead><tr className="border-b border-border">
@@ -175,7 +344,7 @@ export default function Admin() {
                   <th className="text-right px-4 py-3 text-muted-foreground font-medium">Actions</th>
                 </tr></thead>
                 <tbody>
-                  {withdrawals.map(w => {
+                  {filteredWithdrawals.map(w => {
                     const u = users.find(u => u.id === w.user_id);
                     return (
                       <tr key={w.id} className="border-b border-border/50">
@@ -197,25 +366,39 @@ export default function Admin() {
                       </tr>
                     );
                   })}
+                  {filteredWithdrawals.length === 0 && <tr><td colSpan={6} className="px-4 py-8 text-center text-muted-foreground">No withdrawals found</td></tr>}
                 </tbody>
               </table>
             </div>
           </div>
         </TabsContent>
 
+        {/* Users Tab */}
         <TabsContent value="users">
           <div className="bg-card border border-border rounded-xl overflow-hidden">
+            <div className="p-3 border-b border-border">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  value={userSearch}
+                  onChange={e => setUserSearch(e.target.value)}
+                  placeholder="Search by name or email..."
+                  className="pl-9 h-8 text-xs bg-secondary border-border"
+                />
+              </div>
+            </div>
             <div className="overflow-x-auto">
-              <table className="w-full text-sm min-w-[500px]">
+              <table className="w-full text-sm min-w-[600px]">
                 <thead><tr className="border-b border-border">
                   <th className="text-left px-4 py-3 text-muted-foreground font-medium">Name</th>
                   <th className="text-left px-4 py-3 text-muted-foreground font-medium">Email</th>
                   <th className="text-center px-4 py-3 text-muted-foreground font-medium">Tier</th>
                   <th className="text-right px-4 py-3 text-muted-foreground font-medium">Balance</th>
                   <th className="text-right px-4 py-3 text-muted-foreground font-medium">Adjust</th>
+                  <th className="text-center px-4 py-3 text-muted-foreground font-medium">Actions</th>
                 </tr></thead>
                 <tbody>
-                  {users.map(u => (
+                  {filteredUsers.map(u => (
                     <tr key={u.id} className="border-b border-border/50">
                       <td className="px-4 py-3 text-foreground">{u.full_name}</td>
                       <td className="px-4 py-3 text-muted-foreground text-xs sm:text-sm">{u.email}</td>
@@ -235,14 +418,37 @@ export default function Admin() {
                           <Button size="sm" onClick={() => handleBalanceUpdate(u.id)} className="text-xs h-7 bg-primary/10 text-primary hover:bg-primary/20">Set</Button>
                         </div>
                       </td>
+                      <td className="px-4 py-3 text-center">
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button size="sm" variant="ghost" className="h-7 text-destructive hover:text-destructive hover:bg-destructive/10">
+                              <Trash2 className="h-3.5 w-3.5" />
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>Delete User</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                Permanently delete <strong>{u.email}</strong> and all their data? This cannot be undone.
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>Cancel</AlertDialogCancel>
+                              <AlertDialogAction onClick={() => handleDeleteUser(u.id)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">Delete</AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
+                      </td>
                     </tr>
                   ))}
+                  {filteredUsers.length === 0 && <tr><td colSpan={6} className="px-4 py-8 text-center text-muted-foreground">No users found</td></tr>}
                 </tbody>
               </table>
             </div>
           </div>
         </TabsContent>
 
+        {/* Wallets Tab */}
         <TabsContent value="wallets">
           <div className="bg-card border border-border rounded-xl p-4 sm:p-6">
             <div className="flex items-center gap-2 mb-4">
@@ -273,8 +479,30 @@ export default function Admin() {
           </div>
         </TabsContent>
 
+        {/* Transactions Tab */}
         <TabsContent value="transactions">
           <div className="bg-card border border-border rounded-xl overflow-hidden">
+            <div className="p-3 border-b border-border flex flex-wrap items-center gap-2">
+              <div className="relative flex-1 min-w-[150px]">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  value={txSearch}
+                  onChange={e => setTxSearch(e.target.value)}
+                  placeholder="Search user or stock..."
+                  className="pl-9 h-8 text-xs bg-secondary border-border"
+                />
+              </div>
+              <Select value={txTypeFilter} onValueChange={setTxTypeFilter}>
+                <SelectTrigger className="w-28 h-8 text-xs bg-secondary border-border"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Types</SelectItem>
+                  <SelectItem value="buy">Buy</SelectItem>
+                  <SelectItem value="sell">Sell</SelectItem>
+                  <SelectItem value="deposit">Deposit</SelectItem>
+                  <SelectItem value="withdrawal">Withdrawal</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
             <div className="overflow-x-auto">
               <table className="w-full text-sm min-w-[600px]">
                 <thead><tr className="border-b border-border">
@@ -286,7 +514,7 @@ export default function Admin() {
                   <th className="text-right px-4 py-3 text-muted-foreground font-medium">Date</th>
                 </tr></thead>
                 <tbody>
-                  {transactions.map(t => {
+                  {filteredTransactions.map(t => {
                     const u = users.find(u => u.id === t.user_id);
                     return (
                       <tr key={t.id} className="border-b border-border/50">
@@ -303,6 +531,71 @@ export default function Admin() {
                       </tr>
                     );
                   })}
+                  {filteredTransactions.length === 0 && <tr><td colSpan={6} className="px-4 py-8 text-center text-muted-foreground">No transactions found</td></tr>}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </TabsContent>
+
+        {/* Deletion Requests Tab */}
+        <TabsContent value="deletions">
+          <div className="bg-card border border-border rounded-xl overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm min-w-[500px]">
+                <thead><tr className="border-b border-border">
+                  <th className="text-left px-4 py-3 text-muted-foreground font-medium">User</th>
+                  <th className="text-left px-4 py-3 text-muted-foreground font-medium">Requested</th>
+                  <th className="text-left px-4 py-3 text-muted-foreground font-medium">Delete After</th>
+                  <th className="text-center px-4 py-3 text-muted-foreground font-medium">Status</th>
+                  <th className="text-right px-4 py-3 text-muted-foreground font-medium">Actions</th>
+                </tr></thead>
+                <tbody>
+                  {deletionRequests.map(dr => {
+                    const u = users.find(u => u.id === dr.user_id);
+                    const isExpired = new Date(dr.delete_after) <= new Date();
+                    return (
+                      <tr key={dr.id} className="border-b border-border/50">
+                        <td className="px-4 py-3 text-foreground text-xs sm:text-sm">{u?.email || dr.user_id.slice(0, 8)}</td>
+                        <td className="px-4 py-3 text-muted-foreground text-xs">{new Date(dr.requested_at).toLocaleDateString()}</td>
+                        <td className="px-4 py-3 text-xs">
+                          <span className={isExpired ? 'text-destructive' : 'text-chart-yellow'}>
+                            <Clock className="inline h-3 w-3 mr-1" />
+                            {new Date(dr.delete_after).toLocaleDateString()}
+                            {isExpired && ' (expired)'}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3 text-center">
+                          <span className={`text-xs px-2 py-1 rounded ${dr.status === 'pending' ? 'bg-chart-yellow/10 text-chart-yellow' : 'bg-muted text-muted-foreground'}`}>{dr.status}</span>
+                        </td>
+                        <td className="px-4 py-3 text-right">
+                          {dr.status === 'pending' && (
+                            <div className="flex gap-2 justify-end">
+                              <AlertDialog>
+                                <AlertDialogTrigger asChild>
+                                  <Button size="sm" className="bg-destructive/10 text-destructive hover:bg-destructive/20 text-xs h-7">Delete Now</Button>
+                                </AlertDialogTrigger>
+                                <AlertDialogContent>
+                                  <AlertDialogHeader>
+                                    <AlertDialogTitle>Confirm Deletion</AlertDialogTitle>
+                                    <AlertDialogDescription>
+                                      Permanently delete {u?.email || 'this user'} and all their data?
+                                    </AlertDialogDescription>
+                                  </AlertDialogHeader>
+                                  <AlertDialogFooter>
+                                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                    <AlertDialogAction onClick={() => handleDeletionRequestAction(dr.id, dr.user_id, 'approve')} className="bg-destructive text-destructive-foreground">Delete</AlertDialogAction>
+                                  </AlertDialogFooter>
+                                </AlertDialogContent>
+                              </AlertDialog>
+                              <Button size="sm" variant="ghost" onClick={() => handleDeletionRequestAction(dr.id, dr.user_id, 'cancel')} className="text-xs h-7">Cancel Request</Button>
+                            </div>
+                          )}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                  {deletionRequests.length === 0 && <tr><td colSpan={5} className="px-4 py-8 text-center text-muted-foreground">No deletion requests</td></tr>}
                 </tbody>
               </table>
             </div>
