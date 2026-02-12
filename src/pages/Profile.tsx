@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { motion } from 'framer-motion';
-import { User, Mail, Wallet, Calendar, Award, Lock, Trash2, AlertTriangle } from 'lucide-react';
+import { User, Mail, Wallet, Calendar, Award, Lock, Trash2, AlertTriangle, Copy } from 'lucide-react';
 import UserBadge from '@/components/UserBadge';
 import { getTierByTrades, TIERS } from '@/lib/badges';
 import { useNavigate } from 'react-router-dom';
@@ -19,6 +19,7 @@ export default function Profile() {
   const [fullName, setFullName] = useState('');
   const [loading, setLoading] = useState(false);
   const [tradeCount, setTradeCount] = useState(0);
+  const [userCode, setUserCode] = useState('');
 
   // Password change
   const [newPassword, setNewPassword] = useState('');
@@ -42,6 +43,13 @@ export default function Profile() {
       .eq('user_id', user.id)
       .in('type', ['buy', 'sell'])
       .then(({ count }) => setTradeCount(count || 0));
+
+    supabase
+      .from('profiles')
+      .select('user_code')
+      .eq('id', user.id)
+      .single()
+      .then(({ data }) => { if (data?.user_code) setUserCode(data.user_code); });
 
     // Check for existing deletion request
     supabase
@@ -185,6 +193,24 @@ export default function Profile() {
                 <Label className="flex items-center gap-2"><Mail className="h-3.5 w-3.5" /> Email</Label>
                 <Input value={profile?.email || ''} readOnly className="mt-1 bg-secondary border-border text-muted-foreground" />
                 <p className="text-xs text-muted-foreground mt-1">Email cannot be changed</p>
+              </div>
+              <div>
+                <Label className="flex items-center gap-2"><Copy className="h-3.5 w-3.5" /> Your User ID</Label>
+                <div className="flex items-center gap-2 mt-1">
+                  <Input value={userCode} readOnly className="bg-secondary border-border font-mono text-primary tracking-widest" />
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      navigator.clipboard.writeText(userCode);
+                      toast({ title: 'User ID copied!' });
+                    }}
+                    className="shrink-0"
+                  >
+                    <Copy className="h-3.5 w-3.5" />
+                  </Button>
+                </div>
+                <p className="text-xs text-muted-foreground mt-1">Share this code to receive transfers</p>
               </div>
               <Button onClick={handleSave} disabled={loading} className="bg-gradient-primary text-primary-foreground hover:opacity-90">
                 {loading ? 'Saving...' : 'Save Changes'}

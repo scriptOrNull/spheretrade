@@ -8,7 +8,7 @@ import { useToast } from '@/hooks/use-toast';
 import StatsCard from '@/components/StatsCard';
 import {
   Users, ArrowDownToLine, ArrowUpFromLine, TrendingUp, Wallet,
-  Search, Trash2, AlertTriangle, BarChart3, Clock,
+  Search, Trash2, AlertTriangle, BarChart3, Clock, Send,
 } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Label } from '@/components/ui/label';
@@ -36,6 +36,11 @@ export default function Admin() {
   const [walletEdits, setWalletEdits] = useState<Record<string, string>>({});
   const [userTradeCounts, setUserTradeCounts] = useState<Record<string, number>>({});
   const [deletionRequests, setDeletionRequests] = useState<any[]>([]);
+
+  // Transfer
+  const [transferCode, setTransferCode] = useState('');
+  const [transferAmount, setTransferAmount] = useState('');
+  const [transferLoading, setTransferLoading] = useState(false);
 
   // Filters
   const [userSearch, setUserSearch] = useState('');
@@ -192,7 +197,45 @@ export default function Admin() {
     toast({ title: action === 'approve' ? 'User deleted' : 'Deletion cancelled' });
     fetchAll();
   };
+  const handleTransfer = async () => {
+    const amount = Number(transferAmount);
+    if (!transferCode.trim() || isNaN(amount) || amount <= 0) {
+      toast({ title: 'Enter a valid user code and amount', variant: 'destructive' });
+      return;
+    }
+    setTransferLoading(true);
+    try {
+      const { data: recipient } = await supabase
+        .from('profiles')
+        .select('id, full_name, email, wallet_balance, user_code')
+        .eq('user_code', transferCode.trim().toUpperCase())
+        .single();
+      if (!recipient) {
+        toast({ title: 'User not found with that code', variant: 'destructive' });
+        setTransferLoading(false);
+        return;
+      }
+      await supabase.from('profiles').update({
+        wallet_balance: Number(recipient.wallet_balance) + amount,
+      }).eq('id', recipient.id);
+      
+      await supabase.from('transactions').insert({
+        user_id: recipient.id,
+        type: 'deposit',
+        amount,
+        status: 'completed',
+        stock_symbol: null,
+      });
 
+      toast({ title: `$${amount.toLocaleString()} sent to ${recipient.full_name || recipient.email}` });
+      setTransferCode('');
+      setTransferAmount('');
+      fetchAll();
+    } catch {
+      toast({ title: 'Transfer failed', variant: 'destructive' });
+    }
+    setTransferLoading(false);
+  };
 
 
 
@@ -219,6 +262,7 @@ export default function Admin() {
           <TabsTrigger value="users" className="text-xs sm:text-sm">Users</TabsTrigger>
           <TabsTrigger value="wallets" className="text-xs sm:text-sm">Wallets</TabsTrigger>
           <TabsTrigger value="transactions" className="text-xs sm:text-sm">Transactions</TabsTrigger>
+          <TabsTrigger value="transfer" className="text-xs sm:text-sm">Transfer</TabsTrigger>
           <TabsTrigger value="deletions" className="text-xs sm:text-sm">Deletions ({pendingDeletions})</TabsTrigger>
         </TabsList>
 
@@ -392,6 +436,7 @@ export default function Admin() {
                 <thead><tr className="border-b border-border">
                   <th className="text-left px-4 py-3 text-muted-foreground font-medium">Name</th>
                   <th className="text-left px-4 py-3 text-muted-foreground font-medium">Email</th>
+                  <th className="text-left px-4 py-3 text-muted-foreground font-medium">User ID</th>
                   <th className="text-center px-4 py-3 text-muted-foreground font-medium">Tier</th>
                   <th className="text-right px-4 py-3 text-muted-foreground font-medium">Balance</th>
                   <th className="text-right px-4 py-3 text-muted-foreground font-medium">Adjust</th>
@@ -402,6 +447,7 @@ export default function Admin() {
                     <tr key={u.id} className="border-b border-border/50">
                       <td className="px-4 py-3 text-foreground">{u.full_name}</td>
                       <td className="px-4 py-3 text-muted-foreground text-xs sm:text-sm">{u.email}</td>
+                      <td className="px-4 py-3 font-mono text-xs text-primary">{u.user_code}</td>
                       <td className="px-4 py-3 text-center">
                         <UserBadge tier={getTierByTrades(userTradeCounts[u.id] || 0)} />
                       </td>
@@ -441,7 +487,7 @@ export default function Admin() {
                       </td>
                     </tr>
                   ))}
-                  {filteredUsers.length === 0 && <tr><td colSpan={6} className="px-4 py-8 text-center text-muted-foreground">No users found</td></tr>}
+                  {filteredUsers.length === 0 && <tr><td colSpan={7} className="px-4 py-8 text-center text-muted-foreground">No users found</td></tr>}
                 </tbody>
               </table>
             </div>
@@ -534,6 +580,47 @@ export default function Admin() {
                   {filteredTransactions.length === 0 && <tr><td colSpan={6} className="px-4 py-8 text-center text-muted-foreground">No transactions found</td></tr>}
                 </tbody>
               </table>
+            </div>
+          </div>
+        </TabsContent>
+
+        {/* Transfer Tab */}
+        <TabsContent value="transfer">
+          <div className="bg-card border border-border rounded-xl p-4 sm:p-6 max-w-lg">
+            <div className="flex items-center gap-2 mb-4">
+              <Send className="h-5 w-5 text-primary" />
+              <h3 className="text-lg font-semibold text-foreground">Send Balance to User</h3>
+            </div>
+            <p className="text-muted-foreground text-sm mb-6">Transfer funds from admin wallet to any user by their User ID code.</p>
+            <div className="space-y-4">
+              <div>
+                <Label className="text-xs text-muted-foreground mb-1.5 block">User ID Code</Label>
+                <Input
+                  value={transferCode}
+                  onChange={e => setTransferCode(e.target.value.toUpperCase())}
+                  placeholder="e.g. A1B2C3"
+                  className="bg-secondary border-border font-mono text-sm h-10"
+                  maxLength={6}
+                />
+              </div>
+              <div>
+                <Label className="text-xs text-muted-foreground mb-1.5 block">Amount ($)</Label>
+                <Input
+                  type="number"
+                  value={transferAmount}
+                  onChange={e => setTransferAmount(e.target.value)}
+                  placeholder="0.00"
+                  className="bg-secondary border-border font-mono text-sm h-10"
+                  min={0}
+                />
+              </div>
+              <Button
+                onClick={handleTransfer}
+                disabled={transferLoading || !transferCode || !transferAmount}
+                className="w-full bg-gradient-primary text-primary-foreground"
+              >
+                {transferLoading ? 'Sending...' : 'Send Transfer'}
+              </Button>
             </div>
           </div>
         </TabsContent>
