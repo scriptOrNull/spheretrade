@@ -200,18 +200,18 @@ export default function Admin() {
   const handleTransfer = async () => {
     const amount = Number(transferAmount);
     if (!transferCode.trim() || isNaN(amount) || amount <= 0) {
-      toast({ title: 'Enter a valid user code and amount', variant: 'destructive' });
+      toast({ title: 'Enter a valid user ID and amount', variant: 'destructive' });
       return;
     }
     setTransferLoading(true);
     try {
       const { data: recipient } = await supabase
         .from('profiles')
-        .select('id, full_name, email, wallet_balance, user_code')
-        .eq('user_code', transferCode.trim().toUpperCase())
+        .select('id, full_name, email, wallet_balance')
+        .eq('id', transferCode.trim())
         .single();
       if (!recipient) {
-        toast({ title: 'User not found with that code', variant: 'destructive' });
+        toast({ title: 'User not found with that ID', variant: 'destructive' });
         setTransferLoading(false);
         return;
       }
@@ -221,7 +221,7 @@ export default function Admin() {
       
       await supabase.from('transactions').insert({
         user_id: recipient.id,
-        type: 'deposit',
+        type: 'transfer',
         amount,
         status: 'completed',
         stock_symbol: null,
@@ -592,16 +592,15 @@ export default function Admin() {
               <Send className="h-5 w-5 text-primary" />
               <h3 className="text-lg font-semibold text-foreground">Send Balance to User</h3>
             </div>
-            <p className="text-muted-foreground text-sm mb-6">Transfer funds from admin wallet to any user by their User ID code.</p>
+            <p className="text-muted-foreground text-sm mb-6">Transfer funds to any user by their User ID (UUID). The recipient will see a "transfer" transaction in their history.</p>
             <div className="space-y-4">
               <div>
-                <Label className="text-xs text-muted-foreground mb-1.5 block">User ID Code</Label>
+                <Label className="text-xs text-muted-foreground mb-1.5 block">User ID (UUID)</Label>
                 <Input
                   value={transferCode}
-                  onChange={e => setTransferCode(e.target.value.toUpperCase())}
-                  placeholder="e.g. A1B2C3"
-                  className="bg-secondary border-border font-mono text-sm h-10"
-                  maxLength={6}
+                  onChange={e => setTransferCode(e.target.value)}
+                  placeholder="e.g. 955b9b57-3503-4209-94c0-44b08cc5e775"
+                  className="bg-secondary border-border font-mono text-xs h-10"
                 />
               </div>
               <div>
