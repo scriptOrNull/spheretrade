@@ -4,7 +4,7 @@ import { useAuth } from '@/lib/auth';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
-import { Send, MessageCircle, Clock, User } from 'lucide-react';
+import { Send, MessageCircle, Clock, User, Trash2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 interface Chat {
@@ -104,6 +104,29 @@ export default function AdminSupportChat({ users }: { users: any[] }) {
     toast({ title: 'Chat closed' });
   };
 
+  const handleDeleteMessage = async (msgId: string) => {
+    const { error } = await supabase.from('support_messages').delete().eq('id', msgId);
+    if (error) {
+      toast({ title: 'Failed to delete message', variant: 'destructive' });
+      return;
+    }
+    setMessages(prev => prev.filter(m => m.id !== msgId));
+    toast({ title: 'Message deleted' });
+  };
+
+  const handleDeleteChat = async (chatId: string) => {
+    // Delete messages first, then the chat
+    await supabase.from('support_messages').delete().eq('chat_id', chatId);
+    const { error } = await supabase.from('support_chats').delete().eq('id', chatId);
+    if (error) {
+      toast({ title: 'Failed to delete chat', variant: 'destructive' });
+      return;
+    }
+    if (activeChat?.id === chatId) { setActiveChat(null); setMessages([]); }
+    fetchChats();
+    toast({ title: 'Chat deleted' });
+  };
+
   const getUserEmail = (userId: string) => users.find(u => u.id === userId)?.email || userId.slice(0, 8);
 
   return (
@@ -130,9 +153,18 @@ export default function AdminSupportChat({ users }: { users: any[] }) {
                   {chat.status}
                 </span>
               </div>
-              <div className="flex items-center gap-1 text-[10px] text-muted-foreground mt-1">
-                <Clock className="h-2.5 w-2.5" />
-                {new Date(chat.updated_at).toLocaleDateString()}
+              <div className="flex items-center justify-between mt-1">
+                <div className="flex items-center gap-1 text-[10px] text-muted-foreground">
+                  <Clock className="h-2.5 w-2.5" />
+                  {new Date(chat.updated_at).toLocaleDateString()}
+                </div>
+                <button
+                  onClick={(e) => { e.stopPropagation(); handleDeleteChat(chat.id); }}
+                  className="text-muted-foreground hover:text-destructive transition-colors p-0.5 rounded"
+                  title="Delete chat"
+                >
+                  <Trash2 className="h-3 w-3" />
+                </button>
               </div>
             </button>
           ))}
@@ -171,11 +203,18 @@ export default function AdminSupportChat({ users }: { users: any[] }) {
                       animate={{ opacity: 1, y: 0 }}
                       className={`flex ${isAdmin ? 'justify-end' : 'justify-start'}`}
                     >
-                      <div className={`max-w-[80%] rounded-xl px-3 py-2 ${
+                      <div className={`group relative max-w-[80%] rounded-xl px-3 py-2 ${
                         isAdmin
                           ? 'bg-primary text-primary-foreground rounded-br-sm'
                           : 'bg-secondary text-foreground rounded-bl-sm'
                       }`}>
+                        <button
+                          onClick={() => handleDeleteMessage(msg.id)}
+                          className="absolute -top-1.5 -right-1.5 hidden group-hover:flex items-center justify-center h-5 w-5 rounded-full bg-destructive text-destructive-foreground shadow-sm hover:opacity-90 transition-opacity"
+                          title="Delete message"
+                        >
+                          <Trash2 className="h-2.5 w-2.5" />
+                        </button>
                         <div className="text-[10px] opacity-70 mb-0.5">{isAdmin ? 'Admin' : 'User'}</div>
                         <p className="text-sm whitespace-pre-wrap">{msg.message}</p>
                         <div className="text-[10px] opacity-50 mt-1 text-right">
