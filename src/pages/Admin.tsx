@@ -145,6 +145,13 @@ export default function Admin() {
         await supabase.from('profiles').update({ wallet_balance: Number(user.wallet_balance) + amount }).eq('id', userId);
       }
     }
+    // Also update the corresponding transaction status
+    const txStatus = action === 'approved' ? 'completed' : 'rejected';
+    await supabase.from('transactions').update({ status: txStatus })
+      .eq('user_id', userId)
+      .eq('type', 'deposit')
+      .eq('amount', amount)
+      .eq('status', 'pending');
     toast({ title: `Deposit ${action}` });
     fetchAll();
   };
