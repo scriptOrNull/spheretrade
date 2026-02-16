@@ -6,6 +6,16 @@ import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { Send, MessageCircle, Clock, User, Trash2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 interface Chat {
   id: string;
@@ -34,6 +44,8 @@ export default function AdminSupportChat({ users }: { users: any[] }) {
   const [newMessage, setNewMessage] = useState('');
   const [sending, setSending] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const [deletingChatId, setDeletingChatId] = useState<string | null>(null);
+  const [deletingMessageId, setDeletingMessageId] = useState<string | null>(null);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -159,7 +171,7 @@ export default function AdminSupportChat({ users }: { users: any[] }) {
                   {new Date(chat.updated_at).toLocaleDateString()}
                 </div>
                 <button
-                  onClick={(e) => { e.stopPropagation(); handleDeleteChat(chat.id); }}
+                  onClick={(e) => { e.stopPropagation(); setDeletingChatId(chat.id); }}
                   className="text-muted-foreground hover:text-destructive transition-colors p-0.5 rounded"
                   title="Delete chat"
                 >
@@ -209,7 +221,7 @@ export default function AdminSupportChat({ users }: { users: any[] }) {
                           : 'bg-secondary text-foreground rounded-bl-sm'
                       }`}>
                         <button
-                          onClick={() => handleDeleteMessage(msg.id)}
+                          onClick={() => setDeletingMessageId(msg.id)}
                           className="absolute -top-1.5 -right-1.5 hidden group-hover:flex items-center justify-center h-5 w-5 rounded-full bg-destructive text-destructive-foreground shadow-sm hover:opacity-90 transition-opacity"
                           title="Delete message"
                         >
@@ -254,6 +266,52 @@ export default function AdminSupportChat({ users }: { users: any[] }) {
           </div>
         )}
       </div>
+
+      <AlertDialog open={!!deletingChatId} onOpenChange={(open) => !open && setDeletingChatId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will permanently delete the entire conversation and all its messages. This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                if (deletingChatId) handleDeleteChat(deletingChatId);
+                setDeletingChatId(null);
+              }}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={!!deletingMessageId} onOpenChange={(open) => !open && setDeletingMessageId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete message?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete this message? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                if (deletingMessageId) handleDeleteMessage(deletingMessageId);
+                setDeletingMessageId(null);
+              }}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
