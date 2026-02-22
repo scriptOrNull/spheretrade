@@ -31,7 +31,12 @@ export default function Deposit() {
 
   useEffect(() => {
     supabase.functions.invoke('get-wallets').then(({ data, error }) => {
-      if (!error && data) {
+      console.log('get-wallets response:', { data, error });
+      if (error) {
+        console.error('get-wallets error:', error);
+        return;
+      }
+      if (data) {
         const walletData = Array.isArray(data) ? data : [];
         const map: Record<string, string> = {};
         const available: string[] = [];
