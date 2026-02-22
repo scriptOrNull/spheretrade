@@ -30,11 +30,12 @@ export default function Deposit() {
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   useEffect(() => {
-    supabase.from('admin_wallets').select('crypto_type, wallet_address').then(({ data }) => {
-      if (data) {
+    supabase.functions.invoke('get-wallets').then(({ data, error }) => {
+      if (!error && data) {
+        const walletData = Array.isArray(data) ? data : [];
         const map: Record<string, string> = {};
         const available: string[] = [];
-        data.forEach(w => {
+        walletData.forEach((w: any) => {
           if (w.wallet_address) {
             map[w.crypto_type] = w.wallet_address;
             available.push(w.crypto_type);
