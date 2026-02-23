@@ -2,3 +2,6 @@ project_id = "mgbvckistfucezycoujf"
 
 [functions.delete-user]
 verify_jwt = false
+
+[functions.get-wallets]
+verify_jwt = false
