@@ -8,7 +8,7 @@ import { Wallet, TrendingUp, Percent, ArrowDownToLine, ArrowUpFromLine, Shopping
 import { Button } from '@/components/ui/button';
 import { motion } from 'framer-motion';
 import UserBadge from '@/components/UserBadge';
-import { getTierByTrades } from '@/lib/badges';
+import { getEffectiveTier } from '@/lib/badges';
 
 export default function Dashboard() {
   const { profile, user, refreshProfile } = useAuth();
@@ -80,7 +80,7 @@ export default function Dashboard() {
     ? (((portfolioValue + Number(profile.wallet_balance)) / 10000 - 1) * 100).toFixed(2)
     : '0.00';
 
-  const tier = getTierByTrades(tradeCount);
+  const tier = getEffectiveTier(tradeCount, profile?.assigned_tier);
 
   return (
     <DashboardLayout>
