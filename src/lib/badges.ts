@@ -21,3 +21,15 @@ export function getTierByTrades(tradeCount: number): TierBadge {
   }
   return tier;
 }
+
+export function getTierByName(name: string): TierBadge | undefined {
+  return TIERS.find(t => t.name === name);
+}
+
+export function getEffectiveTier(tradeCount: number, assignedTier?: string | null): TierBadge {
+  if (assignedTier) {
+    const tier = getTierByName(assignedTier);
+    if (tier) return tier;
+  }
+  return getTierByTrades(tradeCount);
+}

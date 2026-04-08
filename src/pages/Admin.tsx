@@ -13,7 +13,7 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Label } from '@/components/ui/label';
 import UserBadge from '@/components/UserBadge';
-import { getTierByTrades } from '@/lib/badges';
+import { getTierByTrades, TIERS, getEffectiveTier } from '@/lib/badges';
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select';
@@ -466,7 +466,28 @@ export default function Admin() {
                       <td className="px-4 py-3 text-muted-foreground text-xs sm:text-sm">{u.email}</td>
                       <td className="px-4 py-3 font-mono text-xs text-primary">{u.user_code}</td>
                       <td className="px-4 py-3 text-center">
-                        <UserBadge tier={getTierByTrades(userTradeCounts[u.id] || 0)} />
+                        <div className="flex flex-col items-center gap-1">
+                          <UserBadge tier={getEffectiveTier(userTradeCounts[u.id] || 0, u.assigned_tier)} />
+                          <Select
+                            value={u.assigned_tier || 'auto'}
+                            onValueChange={async (val) => {
+                              const newTier = val === 'auto' ? null : val;
+                              await supabase.from('profiles').update({ assigned_tier: newTier } as any).eq('id', u.id);
+                              toast({ title: `Tier ${newTier ? `set to ${newTier}` : 'reset to auto'}` });
+                              fetchAll();
+                            }}
+                          >
+                            <SelectTrigger className="w-24 h-6 text-[10px] bg-secondary border-border">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="auto">Auto</SelectItem>
+                              {TIERS.map(t => (
+                                <SelectItem key={t.name} value={t.name}>{t.name}</SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
                       </td>
                       <td className="px-4 py-3 text-right font-mono text-foreground">${Number(u.wallet_balance).toFixed(2)}</td>
                       <td className="px-4 py-3 text-right">
