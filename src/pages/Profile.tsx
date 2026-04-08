@@ -174,12 +174,10 @@ export default function Profile() {
       </div>
 
       <div className="grid lg:grid-cols-3 gap-6">
-        {/* Stats Sidebar - shows first on mobile */}
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="order-first lg:order-last space-y-4">
         {/* Left Column */}
         <div className="lg:col-span-2 space-y-6 order-last lg:order-first">
           {/* Profile Card */}
-          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="bg-card border border-border rounded-xl p-6">
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="bg-card border border-border rounded-xl p-4 sm:p-6">
             <h2 className="text-lg font-semibold text-foreground mb-6">Personal Information</h2>
             <div className="space-y-4">
               <div>
@@ -221,7 +219,7 @@ export default function Profile() {
           </motion.div>
 
           {/* Change Password */}
-          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="bg-card border border-border rounded-xl p-6">
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="bg-card border border-border rounded-xl p-4 sm:p-6">
             <h2 className="text-lg font-semibold text-foreground mb-1 flex items-center gap-2"><Lock className="h-4 w-4" /> Change Password</h2>
             <p className="text-sm text-muted-foreground mb-6">Update your account password</p>
             <div className="space-y-4">
@@ -256,7 +254,7 @@ export default function Profile() {
           </motion.div>
 
           {/* Delete Account */}
-          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className="bg-card border border-destructive/30 rounded-xl p-6">
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className="bg-card border border-destructive/30 rounded-xl p-4 sm:p-6">
             <h2 className="text-lg font-semibold text-destructive mb-1 flex items-center gap-2"><Trash2 className="h-4 w-4" /> Delete Account</h2>
 
             {!deletionRequest ? (
@@ -277,7 +275,7 @@ export default function Profile() {
                         <p className="text-xs text-muted-foreground mt-1">This will schedule your account for permanent deletion in 7 days. All your data, portfolio, and transaction history will be removed.</p>
                       </div>
                     </div>
-                    <div className="flex gap-2">
+                    <div className="flex flex-wrap gap-2">
                       <Button size="sm" variant="ghost" onClick={() => setShowDeleteConfirm(false)} className="text-muted-foreground">Cancel</Button>
                       <Button size="sm" onClick={handleRequestDeletion} disabled={deleteLoading} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
                         {deleteLoading ? 'Processing...' : 'Yes, Delete My Account'}
@@ -305,7 +303,7 @@ export default function Profile() {
                     </div>
                   </div>
                 </div>
-                <div className="flex gap-2">
+                <div className="flex flex-wrap gap-2">
                   <Button size="sm" variant="outline" onClick={handleCancelDeletion} disabled={deleteLoading} className="border-border">
                     Cancel Deletion
                   </Button>
@@ -319,12 +317,13 @@ export default function Profile() {
             )}
           </motion.div>
         </div>
-        </div>
 
-        {/* Tier Card */}
-          <div className="bg-gradient-card border border-border rounded-xl p-6 text-center">
-            <div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
-              <Award className="h-8 w-8 text-primary" />
+        {/* Stats Sidebar - shows first on mobile */}
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="order-first lg:order-last space-y-4">
+          {/* Tier Card */}
+          <div className="bg-gradient-card border border-border rounded-xl p-4 sm:p-6 text-center">
+            <div className="h-14 w-14 sm:h-16 sm:w-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
+              <Award className="h-7 w-7 sm:h-8 sm:w-8 text-primary" />
             </div>
             <UserBadge tier={tier} size="md" />
             <p className="text-xs text-muted-foreground mt-3">
@@ -349,7 +348,7 @@ export default function Profile() {
           </div>
 
           {/* Account Info */}
-          <div className="bg-gradient-card border border-border rounded-xl p-6 space-y-4">
+          <div className="bg-gradient-card border border-border rounded-xl p-4 sm:p-6 space-y-4">
             <div className="flex items-center gap-3">
               <Wallet className="h-4 w-4 text-primary shrink-0" />
               <div className="min-w-0">
