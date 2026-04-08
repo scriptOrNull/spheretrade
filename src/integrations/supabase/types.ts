@@ -123,6 +123,7 @@ export type Database = {
       }
       profiles: {
         Row: {
+          assigned_tier: string | null
           created_at: string
           email: string
           full_name: string
@@ -131,6 +132,7 @@ export type Database = {
           wallet_balance: number
         }
         Insert: {
+          assigned_tier?: string | null
           created_at?: string
           email?: string
           full_name?: string
@@ -139,6 +141,7 @@ export type Database = {
           wallet_balance?: number
         }
         Update: {
+          assigned_tier?: string | null
           created_at?: string
           email?: string
           full_name?: string
