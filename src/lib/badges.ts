@@ -12,6 +12,7 @@ export const TIERS: TierBadge[] = [
   { name: 'Gold', color: 'text-chart-yellow', bgColor: 'bg-chart-yellow/15', minTrades: 30 },
   { name: 'Platinum', color: 'text-primary', bgColor: 'bg-primary/10', minTrades: 60 },
   { name: 'Pro', color: 'text-accent', bgColor: 'bg-accent/10', minTrades: 100 },
+  { name: 'Expert', color: 'text-chart-yellow', bgColor: 'bg-chart-yellow/20', minTrades: 200 },
 ];
 
 export function getTierByTrades(tradeCount: number): TierBadge {
