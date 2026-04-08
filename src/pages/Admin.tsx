@@ -271,7 +271,7 @@ export default function Admin() {
       </div>
 
       <Tabs defaultValue="analytics" className="space-y-4">
-        <TabsList className="bg-secondary border border-border flex-wrap h-auto gap-1">
+        <TabsList className="bg-secondary border border-border flex-wrap sm:flex-nowrap sm:overflow-x-auto h-auto gap-1 p-1">
           <TabsTrigger value="analytics" className="text-xs sm:text-sm">Analytics</TabsTrigger>
           <TabsTrigger value="deposits" className="text-xs sm:text-sm">Deposits ({deposits.filter(d => d.status === 'pending').length})</TabsTrigger>
           <TabsTrigger value="withdrawals" className="text-xs sm:text-sm">Withdrawals ({withdrawals.filter(w => w.status === 'pending').length})</TabsTrigger>
