@@ -150,15 +150,7 @@ export default function Profile() {
     }
   };
 
-  const [assignedTier, setAssignedTier] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (!user) return;
-    supabase.from('profiles').select('assigned_tier').eq('id', user.id).single()
-      .then(({ data }) => { if (data) setAssignedTier((data as any).assigned_tier); });
-  }, [user]);
-
-  const tier = getEffectiveTier(tradeCount, assignedTier);
+  const tier = getEffectiveTier(tradeCount, profile?.assigned_tier);
   const nextTier = TIERS.find(t => t.minTrades > tradeCount);
 
   const getDeletionCountdown = () => {
