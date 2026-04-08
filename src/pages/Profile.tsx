@@ -9,7 +9,7 @@ import { useToast } from '@/hooks/use-toast';
 import { motion } from 'framer-motion';
 import { User, Mail, Wallet, Calendar, Award, Lock, Trash2, AlertTriangle, Copy } from 'lucide-react';
 import UserBadge from '@/components/UserBadge';
-import { getTierByTrades, TIERS } from '@/lib/badges';
+import { getEffectiveTier, TIERS } from '@/lib/badges';
 import { useNavigate } from 'react-router-dom';
 
 export default function Profile() {
@@ -150,7 +150,15 @@ export default function Profile() {
     }
   };
 
-  const tier = getTierByTrades(tradeCount);
+  const [assignedTier, setAssignedTier] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!user) return;
+    supabase.from('profiles').select('assigned_tier').eq('id', user.id).single()
+      .then(({ data }) => { if (data) setAssignedTier((data as any).assigned_tier); });
+  }, [user]);
+
+  const tier = getEffectiveTier(tradeCount, assignedTier);
   const nextTier = TIERS.find(t => t.minTrades > tradeCount);
 
   const getDeletionCountdown = () => {
