@@ -89,7 +89,9 @@ export default function Dashboard() {
           <h1 className="text-xl sm:text-2xl font-bold text-foreground">Welcome back, {profile?.full_name || 'Trader'}</h1>
           <p className="text-muted-foreground text-sm mt-1">Here's your trading overview</p>
         </div>
-        <UserBadge tier={tier} size="md" />
+        <div className="self-start">
+          <UserBadge tier={tier} size="md" />
+        </div>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 mb-6 sm:mb-8">
