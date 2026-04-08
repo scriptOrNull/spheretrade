@@ -174,8 +174,10 @@ export default function Profile() {
       </div>
 
       <div className="grid lg:grid-cols-3 gap-6">
+        {/* Stats Sidebar - shows first on mobile */}
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="order-first lg:order-last space-y-4">
         {/* Left Column */}
-        <div className="lg:col-span-2 space-y-6">
+        <div className="lg:col-span-2 space-y-6 order-last lg:order-first">
           {/* Profile Card */}
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="bg-card border border-border rounded-xl p-6">
             <h2 className="text-lg font-semibold text-foreground mb-6">Personal Information</h2>
@@ -317,19 +319,18 @@ export default function Profile() {
             )}
           </motion.div>
         </div>
+        </div>
 
-        {/* Stats Sidebar */}
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="space-y-4">
-          {/* Tier Card */}
+        {/* Tier Card */}
           <div className="bg-gradient-card border border-border rounded-xl p-6 text-center">
             <div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
               <Award className="h-8 w-8 text-primary" />
             </div>
             <UserBadge tier={tier} size="md" />
             <p className="text-xs text-muted-foreground mt-3">
-              {tradeCount} trades completed
+              {profile?.assigned_tier ? 'Assigned by admin' : `${tradeCount} trades completed`}
             </p>
-            {nextTier && (
+            {!profile?.assigned_tier && nextTier && (
               <div className="mt-3">
                 <div className="flex justify-between text-xs text-muted-foreground mb-1">
                   <span>{tier.name}</span>
@@ -344,21 +345,21 @@ export default function Profile() {
                 <p className="text-xs text-muted-foreground mt-1">{nextTier.minTrades - tradeCount} trades to {nextTier.name}</p>
               </div>
             )}
-            {!nextTier && <p className="text-xs text-accent mt-2">🎉 Max tier reached!</p>}
+            {(profile?.assigned_tier || !nextTier) && <p className="text-xs text-accent mt-2">🎉 {profile?.assigned_tier ? `${tier.name} tier` : 'Max tier reached!'}</p>}
           </div>
 
           {/* Account Info */}
           <div className="bg-gradient-card border border-border rounded-xl p-6 space-y-4">
             <div className="flex items-center gap-3">
-              <Wallet className="h-4 w-4 text-primary" />
-              <div>
+              <Wallet className="h-4 w-4 text-primary shrink-0" />
+              <div className="min-w-0">
                 <div className="text-xs text-muted-foreground">Wallet Balance</div>
                 <div className="text-foreground font-bold font-mono">${Number(profile?.wallet_balance || 0).toLocaleString('en-US', { minimumFractionDigits: 2 })}</div>
               </div>
             </div>
             <div className="flex items-center gap-3">
-              <Calendar className="h-4 w-4 text-primary" />
-              <div>
+              <Calendar className="h-4 w-4 text-primary shrink-0" />
+              <div className="min-w-0">
                 <div className="text-xs text-muted-foreground">Member Since</div>
                 <div className="text-foreground text-sm">{user?.created_at ? new Date(user.created_at).toLocaleDateString() : '—'}</div>
               </div>
